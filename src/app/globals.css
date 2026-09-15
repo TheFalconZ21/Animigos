@@ -1,0 +1,267 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #0B0F17;
+    color: #F3F4F6;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
+}
+
+:root {
+  --theme-primary: #A855F7;
+  --theme-primary-rgb: 168, 85, 247;
+  --theme-secondary: #06B6D4;
+  --theme-accent: #C084FC;
+  --theme-bg-start: #0B0F17;
+  --theme-bg-end: #04060A;
+  --theme-header-bg: rgba(17, 24, 39, 0.85);
+  --theme-header-border: rgba(255, 255, 255, 0.08);
+  --theme-panel-bg: rgba(17, 24, 39, 0.75);
+  --theme-panel-border: rgba(255, 255, 255, 0.08);
+  --theme-card-bg: rgba(30, 41, 59, 0.5);
+  --theme-card-border: rgba(255, 255, 255, 0.06);
+  --theme-card-hover-border: rgba(168, 85, 247, 0.4);
+  --theme-card-hover-glow: rgba(168, 85, 247, 0.25);
+  --theme-text-title: #FFFFFF;
+  --theme-text-accent: #C084FC;
+  --theme-text-muted: #94A3B8;
+}
+
+[data-theme="RomanceYuri"] {
+  --theme-primary: #EC4899;
+  --theme-primary-rgb: 236, 72, 153;
+  --theme-secondary: #F472B6;
+  --theme-accent: #FBCFE8;
+  --theme-bg-start: #1A0713;
+  --theme-bg-end: #080205;
+  --theme-header-bg: rgba(35, 12, 24, 0.88);
+  --theme-header-border: rgba(236, 72, 153, 0.35);
+  --theme-panel-bg: rgba(40, 16, 29, 0.85);
+  --theme-panel-border: rgba(236, 72, 153, 0.45);
+  --theme-card-bg: rgba(36, 12, 26, 0.78);
+  --theme-card-border: rgba(236, 72, 153, 0.35);
+  --theme-card-hover-border: rgba(244, 114, 182, 0.85);
+  --theme-card-hover-glow: rgba(236, 72, 153, 0.35);
+  --theme-text-title: #FFFFFF;
+  --theme-text-accent: #F472B6;
+  --theme-text-muted: #FBCFE8;
+}
+
+[data-theme="RomanceYaoi"] {
+  --theme-primary: #F43F5E;
+  --theme-primary-rgb: 244, 63, 94;
+  --theme-secondary: #BE123C;
+  --theme-accent: #FDA4AF;
+  --theme-bg-start: #0D0508;
+  --theme-bg-end: #000000;
+  --theme-header-bg: rgba(10, 11, 15, 0.92);
+  --theme-header-border: rgba(244, 63, 94, 0.35);
+  --theme-panel-bg: rgba(10, 11, 15, 0.95);
+  --theme-panel-border: rgba(244, 63, 94, 0.4);
+  --theme-card-bg: rgba(8, 9, 13, 0.95);
+  --theme-card-border: rgba(244, 63, 94, 0.25);
+  --theme-card-hover-border: rgba(244, 63, 94, 0.75);
+  --theme-card-hover-glow: rgba(244, 63, 94, 0.25);
+  --theme-text-title: #FFFFFF;
+  --theme-text-accent: #FB7185;
+  --theme-text-muted: #CBD5E1;
+}
+
+
+[data-theme="Sci-Fi"] {
+  --theme-primary: #06B6D4;
+  --theme-primary-rgb: 6, 182, 212;
+  --theme-secondary: #3B82F6;
+  --theme-accent: #A5F3FC;
+  --theme-bg-start: #050E1A;
+  --theme-bg-end: #02050B;
+  --theme-header-bg: rgba(9, 24, 38, 0.88);
+  --theme-header-border: rgba(6, 182, 212, 0.35);
+  --theme-panel-bg: rgba(9, 24, 38, 0.85);
+  --theme-panel-border: rgba(6, 182, 212, 0.4);
+  --theme-card-bg: rgba(8, 21, 34, 0.8);
+  --theme-card-border: rgba(6, 182, 212, 0.3);
+  --theme-card-hover-border: rgba(56, 189, 248, 0.85);
+  --theme-card-hover-glow: rgba(6, 182, 212, 0.35);
+  --theme-text-title: #FFFFFF;
+  --theme-text-accent: #38BDF8;
+  --theme-text-muted: #94A3B8;
+}
+
+[data-theme="Slice of Life"] {
+  --theme-primary: #10B981;
+  --theme-primary-rgb: 16, 185, 129;
+  --theme-secondary: #14B8A6;
+  --theme-accent: #A7F3D0;
+  --theme-bg-start: #061510;
+  --theme-bg-end: #020906;
+  --theme-header-bg: rgba(9, 30, 22, 0.88);
+  --theme-header-border: rgba(16, 185, 129, 0.35);
+  --theme-panel-bg: rgba(9, 30, 22, 0.85);
+  --theme-panel-border: rgba(16, 185, 129, 0.4);
+  --theme-card-bg: rgba(7, 25, 18, 0.8);
+  --theme-card-border: rgba(16, 185, 129, 0.3);
+  --theme-card-hover-border: rgba(52, 211, 153, 0.85);
+  --theme-card-hover-glow: rgba(16, 185, 129, 0.35);
+  --theme-text-title: #FFFFFF;
+  --theme-text-accent: #34D399;
+  --theme-text-muted: #A7F3D0;
+}
+
+[data-theme="Acción"] {
+  --theme-primary: #EF4444;
+  --theme-primary-rgb: 239, 68, 68;
+  --theme-secondary: #F97316;
+  --theme-accent: #FECACA;
+  --theme-bg-start: #160506;
+  --theme-bg-end: #050102;
+  --theme-header-bg: rgba(32, 11, 14, 0.88);
+  --theme-header-border: rgba(239, 68, 68, 0.35);
+  --theme-panel-bg: rgba(32, 11, 14, 0.85);
+  --theme-panel-border: rgba(239, 68, 68, 0.4);
+  --theme-card-bg: rgba(26, 8, 11, 0.8);
+  --theme-card-border: rgba(239, 68, 68, 0.3);
+  --theme-card-hover-border: rgba(248, 113, 113, 0.85);
+  --theme-card-hover-glow: rgba(239, 68, 68, 0.35);
+  --theme-text-title: #FFFFFF;
+  --theme-text-accent: #F87171;
+  --theme-text-muted: #E2E8F0;
+}
+
+[data-theme="Comedia"] {
+  --theme-primary: #F59E0B;
+  --theme-primary-rgb: 245, 158, 11;
+  --theme-secondary: #EAB308;
+  --theme-accent: #FDE68A;
+  --theme-bg-start: #060B12;
+  --theme-bg-end: #020406;
+  --theme-header-bg: rgba(8, 15, 23, 0.90);
+  --theme-header-border: rgba(245, 158, 11, 0.35);
+  --theme-panel-bg: rgba(8, 15, 23, 0.86);
+  --theme-panel-border: rgba(245, 158, 11, 0.4);
+  --theme-card-bg: rgba(7, 14, 22, 0.82);
+  --theme-card-border: rgba(245, 158, 11, 0.3);
+  --theme-card-hover-border: rgba(251, 191, 36, 0.85);
+  --theme-card-hover-glow: rgba(245, 158, 11, 0.35);
+  --theme-text-title: #FFFFFF;
+  --theme-text-accent: #FBBF24;
+  --theme-text-muted: #FDE68A;
+}
+
+[data-theme="Terror"] {
+  --theme-primary: #991B1B;
+  --theme-primary-rgb: 153, 27, 27;
+  --theme-secondary: #7F1D1D;
+  --theme-accent: #FECDD3;
+  --theme-bg-start: #0E0407;
+  --theme-bg-end: #000000;
+  --theme-header-bg: rgba(24, 6, 9, 0.92);
+  --theme-header-border: rgba(153, 27, 27, 0.4);
+  --theme-panel-bg: rgba(24, 6, 9, 0.9);
+  --theme-panel-border: rgba(153, 27, 27, 0.45);
+  --theme-card-bg: rgba(18, 4, 6, 0.85);
+  --theme-card-border: rgba(153, 27, 27, 0.35);
+  --theme-card-hover-border: rgba(225, 29, 72, 0.85);
+  --theme-card-hover-glow: rgba(153, 27, 27, 0.4);
+  --theme-text-title: #FFFFFF;
+  --theme-text-accent: #F43F5E;
+  --theme-text-muted: #CBD5E1;
+}
+
+[data-theme="Fantasía"] {
+  --theme-primary: #A855F7;
+  --theme-primary-rgb: 168, 85, 247;
+  --theme-secondary: #9333EA;
+  --theme-accent: #E9D5FF;
+  --theme-bg-start: #0E061A;
+  --theme-bg-end: #030107;
+  --theme-header-bg: rgba(24, 10, 38, 0.88);
+  --theme-header-border: rgba(168, 85, 247, 0.35);
+  --theme-panel-bg: rgba(24, 10, 38, 0.85);
+  --theme-panel-border: rgba(168, 85, 247, 0.4);
+  --theme-card-bg: rgba(19, 7, 32, 0.8);
+  --theme-card-border: rgba(168, 85, 247, 0.3);
+  --theme-card-hover-border: rgba(192, 132, 252, 0.85);
+  --theme-card-hover-glow: rgba(168, 85, 247, 0.35);
+  --theme-text-title: #FFFFFF;
+  --theme-text-accent: #C084FC;
+  --theme-text-muted: #E9D5FF;
+}
+
+[data-theme="Drama"] {
+  --theme-primary: #E2E8F0;
+  --theme-primary-rgb: 226, 232, 240;
+  --theme-secondary: #94A3B8;
+  --theme-accent: #F8FAFC;
+  --theme-bg-start: #0C0F17;
+  --theme-bg-end: #040508;
+  --theme-header-bg: rgba(16, 20, 29, 0.9);
+  --theme-header-border: rgba(148, 163, 184, 0.3);
+  --theme-panel-bg: rgba(18, 22, 32, 0.88);
+  --theme-panel-border: rgba(148, 163, 184, 0.35);
+  --theme-card-bg: rgba(15, 19, 28, 0.82);
+  --theme-card-border: rgba(148, 163, 184, 0.22);
+  --theme-card-hover-border: rgba(226, 232, 240, 0.8);
+  --theme-card-hover-glow: rgba(226, 232, 240, 0.2);
+  --theme-text-title: #FFFFFF;
+  --theme-text-accent: #E2E8F0;
+  --theme-text-muted: #94A3B8;
+}
+
+[data-theme="Deportes"] {
+  --theme-primary: #F97316;
+  --theme-primary-rgb: 249, 115, 22;
+  --theme-secondary: #EA580C;
+  --theme-accent: #FED7AA;
+  --theme-bg-start: #140903;
+  --theme-bg-end: #040201;
+  --theme-header-bg: rgba(34, 18, 8, 0.88);
+  --theme-header-border: rgba(249, 115, 22, 0.35);
+  --theme-panel-bg: rgba(34, 18, 8, 0.85);
+  --theme-panel-border: rgba(249, 115, 22, 0.4);
+  --theme-card-bg: rgba(27, 13, 5, 0.8);
+  --theme-card-border: rgba(249, 115, 22, 0.3);
+  --theme-card-hover-border: rgba(251, 146, 60, 0.85);
+  --theme-card-hover-glow: rgba(249, 115, 22, 0.35);
+  --theme-text-title: #FFFFFF;
+  --theme-text-accent: #FB923C;
+  --theme-text-muted: #FED7AA;
+}
+
+.glass-panel {
+  background: var(--theme-panel-bg, rgba(17, 24, 39, 0.7));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--theme-panel-border, rgba(255, 255, 255, 0.08));
+}
+
+.glass-card {
+  background: var(--theme-card-bg, rgba(30, 41, 59, 0.5));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--theme-card-border, rgba(255, 255, 255, 0.06));
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: var(--theme-card-hover-border, rgba(168, 85, 247, 0.4));
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -10px var(--theme-card-hover-glow, rgba(168, 85, 247, 0.2));
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--theme-primary, #A855F7) 0%, var(--theme-secondary, #06B6D4) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-warm {
+  background: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.accent-glow {
+  box-shadow: 0 0 25px -5px rgba(var(--theme-primary-rgb, 168, 85, 247), 0.4);
+}
