@@ -1,10 +1,30 @@
 "use client";
 
+import { useState } from "react";
 import Navbar from "@/components/common/Navbar";
 import Link from "next/link";
-import { Users, Plus, Vote, ArrowRight, Share2, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/core/contexts/AuthContext";
+import {
+  Users,
+  Plus,
+  ArrowRight,
+  Share2,
+  KeyRound,
+  Check,
+  Info,
+  Sparkles,
+} from "lucide-react";
 
 export default function SharedListsIndexPage() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const isAuthenticated = Boolean(user);
+
+  const [inputCode, setInputCode] = useState("");
+  const [joinError, setJoinError] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
   const sharedLists = [
     {
       id: "demo-list-1",
@@ -26,52 +46,143 @@ export default function SharedListsIndexPage() {
     },
   ];
 
+  const handleJoinWithCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanCode = inputCode.trim().toLowerCase();
+    if (!cleanCode) {
+      setJoinError("Por favor ingresa un código");
+      return;
+    }
+
+    const matchingList = sharedLists.find(
+      (l) => l.inviteCode.toLowerCase() === cleanCode
+    );
+
+    if (matchingList) {
+      router.push(`/shared-lists/${matchingList.id}`);
+    } else {
+      router.push(`/join/${cleanCode}`);
+    }
+  };
+
+  const handleCopyLink = (list: (typeof sharedLists)[0]) => {
+    if (typeof window !== "undefined") {
+      const url = `${window.location.origin}/join/${list.inviteCode}`;
+      navigator.clipboard.writeText(url);
+      setCopiedCode(list.id);
+      setTimeout(() => setCopiedCode(null), 2500);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-transparent flex flex-col">
       <Navbar />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 glass-panel p-6 rounded-2xl border">
-          <div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
-              <Users className="w-7 h-7 text-[var(--theme-primary)]" /> Listas Compartidas (Grupales)
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Header Banner */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 glass-panel p-6 sm:p-8 rounded-3xl border border-white/15">
+          <div className="space-y-2 max-w-xl">
+            <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
+              <Users className="w-8 h-8 text-white" /> Listas Compartidas (Grupales)
             </h1>
-            <p className="text-sm text-gray-400 mt-1">
-              Coordina decisiones con tus amigos o invitados. Voten su interés (0-10) y obtengan recomendaciones objetivas.
+            <p className="text-sm text-slate-400">
+              Coordina decisiones con tu grupo. Voten su interés (0 a 10) y el Algoritmo de Felicidad calculará la opción con mayor consenso.
             </p>
+
+            {/* Aviso para modo invitado */}
+            {!isAuthenticated && (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.06] border border-white/15 text-xs text-slate-300 mt-2">
+                <Info className="w-4 h-4 text-white shrink-0" />
+                <span>
+                  <strong>Modo Invitado:</strong> Puedes unirte a salas grupales existentes mediante enlace o código. Inicia sesión para crear nuevas salas.
+                </span>
+              </div>
+            )}
           </div>
 
-          <Link
-            href="/shared-lists/new"
-            className="px-4 py-2.5 text-sm font-bold text-black bg-white hover:bg-slate-200 rounded-xl shadow-lg shadow-white/10 transition-all flex items-center gap-2 self-start md:self-auto active:scale-95"
-          >
-            <Plus className="w-4 h-4" /> + Crear Nueva Lista Compartida
-          </Link>
+          {/* Acciones del Header: Si está autenticado -> Crear lista. Si es invitado -> Formulario para unirse con código */}
+          {isAuthenticated ? (
+            <Link
+              href="/shared-lists/new"
+              className="px-5 py-3 text-sm font-bold text-black bg-white hover:bg-slate-200 rounded-2xl shadow-lg shadow-white/10 transition-all flex items-center gap-2 self-start md:self-auto active:scale-95 shrink-0"
+            >
+              <Plus className="w-4 h-4" /> + Crear Nueva Lista Compartida
+            </Link>
+          ) : (
+            <form
+              onSubmit={handleJoinWithCode}
+              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 self-start md:self-auto w-full md:w-auto shrink-0"
+            >
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Código de sala (ej. viernes2026)"
+                  value={inputCode}
+                  onChange={(e) => {
+                    setInputCode(e.target.value);
+                    if (joinError) setJoinError(null);
+                  }}
+                  className="bg-black/70 border border-white/20 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-white w-full sm:w-60"
+                />
+                {joinError && (
+                  <span className="absolute -bottom-4 left-1 text-[10px] text-rose-400 font-medium">
+                    {joinError}
+                  </span>
+                )}
+              </div>
+              <button
+                type="submit"
+                className="px-5 py-2.5 text-xs font-bold text-black bg-white hover:bg-slate-200 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+              >
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>Unirse a Sala</span>
+              </button>
+            </form>
+          )}
         </div>
 
         {/* List Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {sharedLists.map((list) => (
-            <div key={list.id} className="glass-card p-6 rounded-3xl border border-white/15 bg-[#0C111D]/80 flex flex-col justify-between hover:border-white/30 transition-all">
+            <div
+              key={list.id}
+              className="glass-card p-6 sm:p-7 rounded-3xl border border-white/15 bg-[#0C111D]/85 flex flex-col justify-between hover:border-white/30 transition-all shadow-xl"
+            >
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-3.5">
                   <span className="px-3 py-1 text-xs font-semibold bg-white/10 text-white border border-white/20 rounded-full">
                     {list.status}
                   </span>
-                  <span className="text-xs text-gray-400 flex items-center gap-1">
+                  <span className="text-xs text-slate-400 flex items-center gap-1.5 font-medium">
                     <Users className="w-3.5 h-3.5 text-white" /> {list.membersCount} integrantes
                   </span>
                 </div>
 
-                <h2 className="text-xl font-bold text-white mb-1">{list.name}</h2>
-                <p className="text-xs text-gray-400 mb-4">{list.description}</p>
+                <h2 className="text-xl font-bold text-white mb-1.5">{list.name}</h2>
+                <p className="text-xs text-slate-400 mb-5 leading-relaxed">{list.description}</p>
 
-                <div className="bg-black/40 p-3 rounded-2xl border border-white/10 flex items-center justify-between text-xs mb-6">
-                  <span className="text-gray-400">Código de invitación:</span>
-                  <code className="font-mono text-white font-bold bg-white/10 px-2.5 py-1 rounded-lg border border-white/15">
-                    {list.inviteCode}
-                  </code>
+                {/* Código de invitación y botón para copiar link */}
+                <div className="bg-black/50 p-3 rounded-2xl border border-white/10 flex items-center justify-between text-xs mb-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-400">Código:</span>
+                    <code className="font-mono text-white font-bold bg-white/10 px-2.5 py-1 rounded-lg border border-white/15">
+                      {list.inviteCode}
+                    </code>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleCopyLink(list)}
+                    className="text-[11px] font-semibold text-slate-300 hover:text-white px-2.5 py-1 rounded-lg hover:bg-white/10 border border-white/10 transition-all flex items-center gap-1.5"
+                    title="Copiar enlace de invitación"
+                  >
+                    {copiedCode === list.id ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <Share2 className="w-3.5 h-3.5" />
+                    )}
+                    <span>{copiedCode === list.id ? "¡Link Copiado!" : "Copiar Enlace"}</span>
+                  </button>
                 </div>
               </div>
 

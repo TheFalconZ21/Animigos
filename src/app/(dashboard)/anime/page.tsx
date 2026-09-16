@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Navbar from "@/components/common/Navbar";
 import AnimeDetailModal from "@/components/common/AnimeDetailModal";
@@ -44,6 +44,19 @@ function AnimesCatalogContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { theme } = useTheme();
+
+  // Calcular color opuesto/de contraste alto para el texto seleccionado
+  const activeTextColor = useMemo(() => {
+    const hex = (theme.primaryColor || "#FFFFFF").replace("#", "");
+    if (hex.length === 6) {
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+      return yiq >= 128 ? "#05070B" : "#FFFFFF";
+    }
+    return "#05070B";
+  }, [theme.primaryColor]);
 
   const initialTab = searchParams.get("tab") === "seasonal" ? "seasonal" : "top";
   const [activeTab, setActiveTab] = useState<"top" | "seasonal">(initialTab);
@@ -295,40 +308,44 @@ function AnimesCatalogContent() {
             <button
               type="button"
               onClick={() => handleTabChange("top")}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300"
+              className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs sm:text-sm transition-all duration-300 ${
+                activeTab === "top" ? "font-black" : "font-semibold hover:text-white"
+              }`}
               style={{
                 background:
                   activeTab === "top"
                     ? `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`
                     : "transparent",
-                color: activeTab === "top" ? "#ffffff" : "#9ca3af",
+                color: activeTab === "top" ? activeTextColor : "#9ca3af",
                 boxShadow:
                   activeTab === "top"
                     ? `0 4px 20px rgba(${theme.primaryRgb}, 0.35)`
                     : "none",
               }}
             >
-              <Award className="w-4 h-4" />
+              <Award className="w-4 h-4" style={{ color: activeTab === "top" ? activeTextColor : undefined }} />
               Top Animes
             </button>
 
             <button
               type="button"
               onClick={() => handleTabChange("seasonal")}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300"
+              className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs sm:text-sm transition-all duration-300 ${
+                activeTab === "seasonal" ? "font-black" : "font-semibold hover:text-white"
+              }`}
               style={{
                 background:
                   activeTab === "seasonal"
                     ? `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`
                     : "transparent",
-                color: activeTab === "seasonal" ? "#ffffff" : "#9ca3af",
+                color: activeTab === "seasonal" ? activeTextColor : "#9ca3af",
                 boxShadow:
                   activeTab === "seasonal"
                     ? `0 4px 20px rgba(${theme.primaryRgb}, 0.35)`
                     : "none",
               }}
             >
-              <CalendarIcon className="w-4 h-4" />
+              <CalendarIcon className="w-4 h-4" style={{ color: activeTab === "seasonal" ? activeTextColor : undefined }} />
               De Temporada (Calendario)
             </button>
           </div>
