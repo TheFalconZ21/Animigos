@@ -44,10 +44,7 @@ export default function SharedListsIndexPage() {
 
           <Link
             href="/shared-lists/new"
-            className="px-4 py-2.5 text-sm font-semibold text-white rounded-xl shadow-lg transition-all flex items-center gap-2 self-start md:self-auto hover:opacity-90 active:scale-95"
-            style={{
-              background: "linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))",
-            }}
+            className="px-4 py-2.5 text-sm font-bold text-black bg-white hover:bg-slate-200 rounded-xl shadow-lg shadow-white/10 transition-all flex items-center gap-2 self-start md:self-auto active:scale-95"
           >
             <Plus className="w-4 h-4" /> + Crear Nueva Lista Compartida
           </Link>
@@ -56,14 +53,14 @@ export default function SharedListsIndexPage() {
         {/* List Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {sharedLists.map((list) => (
-            <div key={list.id} className="glass-card p-6 rounded-3xl border flex flex-col justify-between">
+            <div key={list.id} className="glass-card p-6 rounded-3xl border border-white/15 bg-[#0C111D]/80 flex flex-col justify-between hover:border-white/30 transition-all">
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="px-3 py-1 text-xs font-semibold bg-[var(--theme-card-bg)] text-[var(--theme-text-accent)] border border-[var(--theme-card-hover-border)] rounded-full">
+                  <span className="px-3 py-1 text-xs font-semibold bg-white/10 text-white border border-white/20 rounded-full">
                     {list.status}
                   </span>
                   <span className="text-xs text-gray-400 flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5 text-[var(--theme-primary)]" /> {list.membersCount} integrantes
+                    <Users className="w-3.5 h-3.5 text-white" /> {list.membersCount} integrantes
                   </span>
                 </div>
 
@@ -72,7 +69,7 @@ export default function SharedListsIndexPage() {
 
                 <div className="bg-black/40 p-3 rounded-2xl border border-white/10 flex items-center justify-between text-xs mb-6">
                   <span className="text-gray-400">Código de invitación:</span>
-                  <code className="font-mono text-[var(--theme-text-accent)] font-bold bg-black/50 px-2.5 py-1 rounded-lg border border-white/10">
+                  <code className="font-mono text-white font-bold bg-white/10 px-2.5 py-1 rounded-lg border border-white/15">
                     {list.inviteCode}
                   </code>
                 </div>
@@ -80,10 +77,7 @@ export default function SharedListsIndexPage() {
 
               <Link
                 href={`/shared-lists/${list.id}`}
-                className="w-full py-3 text-center text-sm font-bold text-white rounded-2xl transition-all flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.99] shadow-lg"
-                style={{
-                  background: "linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))",
-                }}
+                className="w-full py-3 text-center text-sm font-bold text-black bg-white hover:bg-slate-200 rounded-2xl transition-all flex items-center justify-center gap-2 active:scale-[0.99] shadow-lg shadow-white/10"
               >
                 <span>Entrar a la Sala de Votación</span>
                 <ArrowRight className="w-4 h-4" />

@@ -1,6 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import { usePathname } from "next/navigation";
+import { useAuth } from "@/core/contexts/AuthContext";
 import { GENRE_THEMES, GenreThemeConfig } from "@/core/utils/score-theme";
 
 export interface ThemeFilterSetting {
@@ -24,7 +26,7 @@ export const DEFAULT_THEME_FILTERS: Record<string, ThemeFilterSetting> = {
   Drama: { filterOpacity: 0.8, canvasOpacity: 0.8, blur: 0 },
   Deportes: { filterOpacity: 0.75, canvasOpacity: 0.7, blur: 1 },
   Sports: { filterOpacity: 0.75, canvasOpacity: 0.7, blur: 1 },
-  Default: { filterOpacity: 0.7, canvasOpacity: 0.65, blur: 0 },
+  Default: { filterOpacity: 0.85, canvasOpacity: 0.1, blur: 0 },
 };
 
 interface ThemeContextValue {
@@ -42,20 +44,22 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: GENRE_THEMES.RomanceYuri,
-  themeId: "RomanceYuri",
+  theme: GENRE_THEMES.Default,
+  themeId: "Default",
   manualTheme: "auto",
   setManualTheme: () => {},
   detectedTopGenre: "RomanceYuri",
   overrideThemeId: null,
   setOverrideThemeId: () => {},
   themeFilterSettings: DEFAULT_THEME_FILTERS,
-  getThemeFilterSetting: () => ({ filterOpacity: 0.75, canvasOpacity: 0.70, blur: 0 }),
+  getThemeFilterSetting: () => ({ filterOpacity: 0.85, canvasOpacity: 0, blur: 0 }),
   updateThemeFilter: () => {},
   resetThemeFilter: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const pathname = usePathname();
   const [manualTheme, setManualThemeState] = useState<string>("auto");
   const [detectedTopGenre, setDetectedTopGenre] = useState<string>("RomanceYuri");
   const [overrideThemeId, setOverrideThemeId] = useState<string | null>(null);
@@ -142,24 +146,46 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   const activeThemeId = useMemo(() => {
+    // 1. Landing page, login, register siempre usan el tema neutro de la plataforma
+    const isNeutralPublicRoute =
+      pathname === "/" ||
+      pathname === "/login" ||
+      pathname === "/register" ||
+      pathname === "/onboarding";
+
+    if (isNeutralPublicRoute) {
+      return "Default";
+    }
+
+    // 2. Si no hay usuario logeado, "animes" y "lista grupal" usan la paleta neutra ("Default")
+    if (!user) {
+      return "Default";
+    }
+
+    // 3. Para usuarios autenticados en secciones internas, aplicar override o tema configurado
     if (overrideThemeId && GENRE_THEMES[overrideThemeId]) {
       return overrideThemeId;
     }
     if (manualTheme !== "auto" && GENRE_THEMES[manualTheme]) {
       return manualTheme;
     }
-    return detectedTopGenre;
-  }, [overrideThemeId, manualTheme, detectedTopGenre]);
+    return detectedTopGenre || "Default";
+  }, [pathname, user, overrideThemeId, manualTheme, detectedTopGenre]);
 
   const activeTheme = useMemo(() => {
-    return GENRE_THEMES[activeThemeId] || GENRE_THEMES.RomanceYuri;
+    return GENRE_THEMES[activeThemeId] || GENRE_THEMES.Default;
   }, [activeThemeId]);
 
   useEffect(() => {
     if (typeof document !== "undefined") {
       document.documentElement.setAttribute("data-theme", activeThemeId);
+      if (activeTheme?.cssVars) {
+        Object.entries(activeTheme.cssVars).forEach(([key, val]) => {
+          document.documentElement.style.setProperty(key, val);
+        });
+      }
     }
-  }, [activeThemeId]);
+  }, [activeThemeId, activeTheme]);
 
   const value = useMemo(
     () => ({
@@ -192,6 +218,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         className="w-full min-h-screen text-slate-100 relative transition-colors duration-500"
         style={{
           background: "linear-gradient(to bottom, var(--theme-bg-start), var(--theme-bg-end))",
+          ...(activeTheme?.cssVars as React.CSSProperties),
         }}
       >
         {children}

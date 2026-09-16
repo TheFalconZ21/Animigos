@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import { usePathname } from "next/navigation";
+import { useAuth } from "@/core/contexts/AuthContext";
 import { useTheme, ThemeFilterSetting } from "@/core/contexts/ThemeContext";
 import { GENRE_THEMES } from "@/core/utils/score-theme";
 import {
@@ -17,6 +19,8 @@ import {
 } from "lucide-react";
 
 export default function ThemeFilterCalibrator() {
+  const pathname = usePathname();
+  const { user } = useAuth();
   const {
     themeId,
     setManualTheme,
@@ -29,6 +33,11 @@ export default function ThemeFilterCalibrator() {
   const [selectedThemeId, setSelectedThemeId] = useState<string>(themeId);
   const [copied, setCopied] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+
+  // Hide calibrator on landing, auth pages, or for unauthenticated visitors
+  if (!user || pathname === "/" || pathname === "/login" || pathname === "/register" || pathname === "/onboarding") {
+    return null;
+  }
 
   // Sync selected theme with context theme when opened
   const currentThemeId = selectedThemeId || themeId;
