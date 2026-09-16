@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { ExtendedAnime, MOCK_USER_FRIENDS } from "@/core/services/catalog-data";
 import { sendFriendRecommendation } from "@/core/services/recommendations.service";
+import { useTheme } from "@/core/contexts/ThemeContext";
 import {
   X,
   Star,
-  Plus,
   Check,
   Send,
   Building2,
@@ -29,11 +29,13 @@ interface AnimeDetailModalProps {
 }
 
 export default function AnimeDetailModal({ anime, onClose, onAddToList }: AnimeDetailModalProps) {
+  const { theme } = useTheme();
   const [selectedFriendId, setSelectedFriendId] = useState(MOCK_USER_FRIENDS[0]?.id || "");
   const [recNote, setRecNote] = useState("");
   const [recSuccess, setRecSuccess] = useState(false);
   const [addedStatus, setAddedStatus] = useState<string | null>(null);
   const [isRecommending, setIsRecommending] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   if (!anime) return null;
 
@@ -63,41 +65,85 @@ export default function AnimeDetailModal({ anime, onClose, onAddToList }: AnimeD
     }
   };
 
+  // Fallback image in case the CDN image fails
+  const displayImageUrl = imageError
+    ? "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80"
+    : anime.imageUrl;
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-      {/* Container 100% Sólido Opaco */}
-      <div className="bg-[#0F172A] border border-purple-500/40 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative text-white">
-        {/* Close Button */}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+      {/* Modal Container: Adaptable al tema */}
+      <div
+        className="rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative text-white border transition-all duration-300"
+        style={{
+          backgroundColor: "var(--theme-card-bg, #0B0F17)",
+          borderColor: `rgba(${theme.primaryRgb}, 0.45)`,
+          boxShadow: `0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(${theme.primaryRgb}, 0.2)`,
+        }}
+      >
+        {/* Botón de Cierre */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-gray-900/90 border border-gray-700 flex items-center justify-center text-gray-300 hover:text-white hover:bg-gray-800 transition-all"
+          className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/70 border border-white/15 flex items-center justify-center text-gray-300 hover:text-white hover:bg-black/90 transition-all hover:scale-105"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* Modal Header Cover */}
-        <div className="relative h-48 sm:h-64 w-full overflow-hidden bg-gradient-to-r from-purple-950 via-slate-900 to-cyan-950 flex items-center px-6 sm:px-10">
-          <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#a855f7_1px,transparent_1px)] [background-size:16px_16px]" />
+        {/* Modal Header Cover: Degradado ambiental del tema */}
+        <div
+          className="relative h-48 sm:h-64 w-full overflow-hidden flex items-center px-6 sm:px-10 transition-all"
+          style={{
+            background: `linear-gradient(135deg, rgba(${theme.primaryRgb}, 0.5) 0%, rgba(11, 15, 23, 0.95) 60%, rgba(${theme.primaryRgb}, 0.2) 100%)`,
+          }}
+        >
+          {/* Patrón de puntos radiales con el color del tema */}
+          <div
+            className="absolute inset-0 opacity-25"
+            style={{
+              backgroundImage: `radial-gradient(rgba(${theme.primaryRgb}, 0.5) 1.5px, transparent 1.5px)`,
+              backgroundSize: "16px 16px",
+            }}
+          />
+
           <div className="relative z-10 flex items-center gap-6 mt-6">
             <img
-              src={anime.imageUrl}
+              src={displayImageUrl}
               alt={anime.title}
-              className="w-28 sm:w-36 h-40 sm:h-52 object-cover rounded-2xl border-2 border-purple-500/50 shadow-2xl shrink-0 -mb-16 sm:-mb-20"
+              onError={() => setImageError(true)}
+              className="w-28 sm:w-36 h-40 sm:h-52 object-cover rounded-2xl shadow-2xl shrink-0 -mb-16 sm:-mb-20 border-2 transition-all"
+              style={{
+                borderColor: `rgba(${theme.primaryRgb}, 0.65)`,
+                boxShadow: `0 10px 30px rgba(0, 0, 0, 0.6), 0 0 25px rgba(${theme.primaryRgb}, 0.3)`,
+              }}
             />
             <div className="space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="bg-purple-900/80 text-purple-300 text-xs font-bold px-3 py-1 rounded-full border border-purple-700/50 flex items-center gap-1">
+                {/* Rank Badge Adaptable */}
+                <span
+                  className="text-xs font-bold px-3 py-1 rounded-full border flex items-center gap-1 backdrop-blur-md"
+                  style={{
+                    backgroundColor: `rgba(${theme.primaryRgb}, 0.25)`,
+                    color: "white",
+                    borderColor: `rgba(${theme.primaryRgb}, 0.5)`,
+                  }}
+                >
                   <Award className="w-3.5 h-3.5 text-amber-400" /> Rank #{anime.rank}
                 </span>
-                <span className="bg-amber-950/80 text-amber-300 text-xs font-extrabold px-3 py-1 rounded-full border border-amber-700/50 flex items-center gap-1">
+
+                {/* Score Badge */}
+                <span className="bg-amber-950/80 text-amber-300 text-xs font-extrabold px-3 py-1 rounded-full border border-amber-700/50 flex items-center gap-1 shadow">
                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {anime.score} MAL
                 </span>
               </div>
+
               <h2 className="text-xl sm:text-2xl font-black text-white leading-tight line-clamp-2">
                 {anime.title}
               </h2>
+
               {anime.titleJapanese && (
-                <p className="text-xs text-purple-300 font-medium tracking-wide">{anime.titleJapanese}</p>
+                <p className="text-xs font-medium tracking-wide opacity-80" style={{ color: theme.primaryColor }}>
+                  {anime.titleJapanese}
+                </p>
               )}
             </div>
           </div>
@@ -106,9 +152,9 @@ export default function AnimeDetailModal({ anime, onClose, onAddToList }: AnimeD
         {/* Body Content */}
         <div className="p-6 sm:p-8 pt-16 sm:pt-20 space-y-6">
           {/* Metadata Badges Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-900/90 p-4 rounded-2xl border border-gray-800 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-black/40 p-4 rounded-2xl border border-white/10 text-xs backdrop-blur-md">
             <div className="flex items-center gap-2 text-gray-300">
-              <Building2 className="w-4 h-4 text-purple-400 shrink-0" />
+              <Building2 className="w-4 h-4 shrink-0" style={{ color: theme.primaryColor }} />
               <div>
                 <p className="text-[10px] text-gray-400 font-semibold uppercase">Estudio</p>
                 <p className="font-bold text-white truncate">{anime.studio}</p>
@@ -143,26 +189,34 @@ export default function AnimeDetailModal({ anime, onClose, onAddToList }: AnimeD
           {/* Synopsis */}
           <div className="space-y-2">
             <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-purple-400" /> Sinopsis General
+              <Sparkles className="w-4 h-4" style={{ color: theme.primaryColor }} /> Sinopsis General
             </h3>
-            <p className="text-sm text-gray-300 leading-relaxed bg-slate-900/60 p-4 rounded-2xl border border-gray-800">
+            <p className="text-sm text-gray-300 leading-relaxed bg-black/30 p-4 rounded-2xl border border-white/10">
               {anime.synopsis}
             </p>
           </div>
 
-          {/* Activity of Friends */}
+          {/* Activity of Friends: Con acento del tema */}
           {anime.watchedByFriends && anime.watchedByFriends.length > 0 && (
-            <div className="bg-purple-950/30 border border-purple-800/40 p-4 rounded-2xl flex items-center gap-3">
-              <Users className="w-5 h-5 text-purple-400 shrink-0" />
+            <div
+              className="p-4 rounded-2xl flex items-center gap-3 border transition-all"
+              style={{
+                backgroundColor: `rgba(${theme.primaryRgb}, 0.12)`,
+                borderColor: `rgba(${theme.primaryRgb}, 0.35)`,
+              }}
+            >
+              <Users className="w-5 h-5 shrink-0" style={{ color: theme.primaryColor }} />
               <div className="text-xs">
-                <span className="font-bold text-purple-300">Visto por tus amigos: </span>
-                <span className="text-gray-300">{anime.watchedByFriends.join(", ")}</span>
+                <span className="font-bold" style={{ color: theme.primaryColor }}>
+                  Visto por tus amigos:{" "}
+                </span>
+                <span className="text-gray-200">{anime.watchedByFriends.join(", ")}</span>
               </div>
             </div>
           )}
 
           {/* Action Buttons: Add to List & Recommend to Friend */}
-          <div className="space-y-4 pt-2 border-t border-gray-800">
+          <div className="space-y-4 pt-2 border-t border-white/10">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
               {/* Add to list options */}
               <div className="flex items-center gap-2 flex-wrap">
@@ -172,7 +226,7 @@ export default function AnimeDetailModal({ anime, onClose, onAddToList }: AnimeD
                   className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all border ${
                     addedStatus === "vistos"
                       ? "bg-emerald-600 text-white border-emerald-500"
-                      : "bg-gray-900 text-gray-300 border-gray-700 hover:border-emerald-500 hover:text-white"
+                      : "bg-black/40 text-gray-300 border-white/10 hover:border-emerald-500 hover:text-white"
                   }`}
                 >
                   <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Vistos
@@ -182,7 +236,7 @@ export default function AnimeDetailModal({ anime, onClose, onAddToList }: AnimeD
                   className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all border ${
                     addedStatus === "viendo"
                       ? "bg-cyan-600 text-white border-cyan-500"
-                      : "bg-gray-900 text-gray-300 border-gray-700 hover:border-cyan-500 hover:text-white"
+                      : "bg-black/40 text-gray-300 border-white/10 hover:border-cyan-500 hover:text-white"
                   }`}
                 >
                   <Eye className="w-3.5 h-3.5 text-cyan-400" /> Viendo
@@ -192,49 +246,70 @@ export default function AnimeDetailModal({ anime, onClose, onAddToList }: AnimeD
                   className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all border ${
                     addedStatus === "pendientes"
                       ? "bg-amber-600 text-white border-amber-500"
-                      : "bg-gray-900 text-gray-300 border-gray-700 hover:border-amber-500 hover:text-white"
+                      : "bg-black/40 text-gray-300 border-white/10 hover:border-amber-500 hover:text-white"
                   }`}
                 >
                   <Clock className="w-3.5 h-3.5 text-amber-400" /> Pendientes
                 </button>
                 <button
                   onClick={() => handleAddStatus("favoritos")}
-                  className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all border ${
-                    addedStatus === "favoritos"
-                      ? "bg-purple-600 text-white border-purple-500"
-                      : "bg-gray-900 text-gray-300 border-gray-700 hover:border-purple-500 hover:text-white"
-                  }`}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all border"
+                  style={{
+                    backgroundColor: addedStatus === "favoritos" ? theme.primaryColor : "rgba(0, 0, 0, 0.4)",
+                    borderColor: addedStatus === "favoritos" ? theme.primaryColor : "rgba(255, 255, 255, 0.1)",
+                    color: addedStatus === "favoritos" ? "white" : "#d1d5db",
+                  }}
                 >
-                  <Heart className="w-3.5 h-3.5 text-purple-400 fill-purple-400" /> Favoritos
+                  <Heart
+                    className="w-3.5 h-3.5"
+                    style={{
+                      color: addedStatus === "favoritos" ? "white" : theme.primaryColor,
+                      fill: addedStatus === "favoritos" ? "white" : theme.primaryColor,
+                    }}
+                  />
+                  Favoritos
                 </button>
               </div>
 
-              {/* Toggle Recommend Form */}
+              {/* Botón Recomendar a un Amigo: Sincronizado con el tema */}
               <button
                 onClick={() => setIsRecommending(!isRecommending)}
-                className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-900/50 shrink-0"
+                className="px-4 py-2.5 rounded-xl text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg shrink-0 hover:brightness-110 active:scale-95"
+                style={{
+                  background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
+                  boxShadow: `0 4px 20px rgba(${theme.primaryRgb}, 0.35)`,
+                }}
               >
                 <Send className="w-3.5 h-3.5" /> Recomendar a un Amigo
               </button>
             </div>
 
-            {/* Recommendation Form Drawer */}
+            {/* Recommendation Form Drawer Adaptado al Tema */}
             {isRecommending && (
               <form
                 onSubmit={handleSendRecommendation}
-                className="bg-slate-900 p-4 sm:p-5 rounded-2xl border border-purple-500/40 space-y-3 animate-fadeIn"
+                className="bg-black/50 p-4 sm:p-5 rounded-2xl border space-y-3 animate-fadeIn"
+                style={{
+                  borderColor: `rgba(${theme.primaryRgb}, 0.4)`,
+                }}
               >
-                <h4 className="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
+                <h4
+                  className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5"
+                  style={{ color: theme.primaryColor }}
+                >
                   <Send className="w-3.5 h-3.5" /> Enviar recomendación personalizada
                 </h4>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Amigo Destinatario</label>
                     <select
                       value={selectedFriendId}
                       onChange={(e) => setSelectedFriendId(e.target.value)}
-                      className="w-full bg-slate-950 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
+                      className="w-full bg-black/80 border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                      style={{
+                        borderColor: `rgba(${theme.primaryRgb}, 0.3)`,
+                      }}
                     >
                       {MOCK_USER_FRIENDS.map((f) => (
                         <option key={f.id} value={f.id}>
@@ -251,7 +326,10 @@ export default function AnimeDetailModal({ anime, onClose, onAddToList }: AnimeD
                       placeholder="Ej: 'Tienes que ver la animación del episodio 10...'"
                       value={recNote}
                       onChange={(e) => setRecNote(e.target.value)}
-                      className="w-full bg-slate-950 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                      className="w-full bg-black/80 border border-white/15 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none"
+                      style={{
+                        borderColor: `rgba(${theme.primaryRgb}, 0.3)`,
+                      }}
                     />
                   </div>
                 </div>
@@ -266,7 +344,10 @@ export default function AnimeDetailModal({ anime, onClose, onAddToList }: AnimeD
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all flex items-center gap-1.5"
+                    className="px-4 py-1.5 rounded-lg text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow hover:brightness-110"
+                    style={{
+                      background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
+                    }}
                   >
                     {recSuccess ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Send className="w-3.5 h-3.5" />}
                     {recSuccess ? "¡Enviado!" : "Enviar Recomendación"}

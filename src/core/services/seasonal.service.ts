@@ -206,7 +206,7 @@ export const SEASONAL_ANIMES_DATABASE: ExtendedAnime[] = [
     malId: 59104,
     title: "Dr. STONE: Science Future",
     titleEnglish: "Dr. Stone Season 4",
-    imageUrl: "https://cdn.myanimelist.net/images/anime/1169/138865.jpg",
+    imageUrl: "https://cdn.myanimelist.net/images/anime/1613/102576.jpg",
     score: 8.52,
     rank: 135,
     episodes: 24,
