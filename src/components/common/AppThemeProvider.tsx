@@ -2,17 +2,20 @@
 
 import React from "react";
 import { ThemeProvider } from "@/core/contexts/ThemeContext";
+import { AuthProvider } from "@/core/contexts/AuthContext";
 import ThemeBackgroundWrapper from "./ThemeBackgroundWrapper";
 import ThemeFilterCalibrator from "./ThemeFilterCalibrator";
 
 export default function AppThemeProvider({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider>
-      <ThemeBackgroundWrapper />
-      <div className="relative z-10 w-full min-h-screen bg-transparent">
-        {children}
-      </div>
-      <ThemeFilterCalibrator />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <ThemeBackgroundWrapper />
+        <div className="relative z-10 w-full min-h-screen bg-transparent">
+          {children}
+        </div>
+        <ThemeFilterCalibrator />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }

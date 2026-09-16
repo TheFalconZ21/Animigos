@@ -5,10 +5,20 @@ import { useSearchParams } from "next/navigation";
 import Navbar from "@/components/common/Navbar";
 import { getCurrentUserProfile, getUserAnimeStats, UserProfile, UserAnimeStats, PrivacySettings } from "@/core/services/user-profile.service";
 import { getPublicUserProfile, getPublicUserStats, PublicUserProfile } from "@/core/services/public-profile.service";
-import { getFriendsList, getPendingFriendRequests, removeFriend, sendFriendRequest, FriendUser, FriendRequest } from "@/core/services/friends.service";
+import {
+  getFriendsList,
+  getPendingFriendRequests,
+  removeFriend,
+  sendFriendRequest,
+  acceptFriendRequest,
+  subscribeToFriendships,
+  FriendUser,
+  FriendRequest,
+} from "@/core/services/friends.service";
 import { getUserPersonalLists, PersonalList } from "@/core/services/personal-list.service";
 import { sendFriendRecommendation } from "@/core/services/recommendations.service";
 import { ThemeScope, useTheme } from "@/core/contexts/ThemeContext";
+import { useAuth } from "@/core/contexts/AuthContext";
 import { GENRE_THEMES } from "@/core/utils/score-theme";
 import {
   User,
@@ -41,7 +51,14 @@ function ProfileContent() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") || "friends";
   const userParam = searchParams.get("user");
-  const isViewingOtherUser = Boolean(userParam && userParam.toLowerCase() !== "maxiotaku");
+
+  const { user: authUser, profile: authProfile } = useAuth();
+  const currentUserId = authUser?.id || "demo-user-1";
+
+  const isViewingOtherUser = Boolean(
+    userParam &&
+      userParam.toLowerCase() !== (authProfile?.username.toLowerCase() || "maxiotaku")
+  );
 
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -105,7 +122,7 @@ function ProfileContent() {
 
   useEffect(() => {
     loadProfileData();
-  }, [userParam]);
+  }, [userParam, authUser, authProfile]);
 
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab");
@@ -114,39 +131,89 @@ function ProfileContent() {
     }
   }, [searchParams]);
 
+  // Supabase Realtime: Suscripción a solicitudes y cambios de amistad
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const unsubscribe = subscribeToFriendships(currentUserId, () => {
+      getFriendsList(currentUserId).then(setFriends);
+      getPendingFriendRequests(currentUserId).then(setPendingRequests);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [currentUserId]);
+
   async function loadProfileData() {
-    if (userParam && userParam.toLowerCase() !== "maxiotaku") {
+    if (
+      userParam &&
+      userParam.toLowerCase() !== (authProfile?.username.toLowerCase() || "maxiotaku")
+    ) {
       const pubUser = await getPublicUserProfile(userParam);
       const pubStats = await getPublicUserStats(userParam);
       setPublicProfile(pubUser);
       if (pubUser) setProfile(pubUser);
       setStats(pubStats);
+
+      const friendData = await getFriendsList(pubUser?.id || "demo-user-1");
+      setFriends(friendData);
     } else {
-      const user = await getCurrentUserProfile("demo-user-1");
-      setProfile(user);
+      if (authProfile) {
+        setProfile({
+          id: authProfile.id,
+          username: authProfile.username,
+          displayName: authProfile.displayName,
+          email: authUser?.email || "usuario@animigos.app",
+          avatarUrl: authProfile.avatarUrl,
+          bio: authProfile.bio || "Amante del anime y las buenas historias.",
+          levelTitle: "Miembro de la Comunidad",
+          levelNumber: 12,
+          favoriteGenre: "General & Shonen",
+          archetype: "Explorador de Géneros",
+          memberSince: new Date(authProfile.createdAt || Date.now()).toLocaleDateString("es-ES", {
+            month: "short",
+            year: "numeric",
+          }),
+          privacy: {
+            personalListVisibility: "public",
+            statsVisibility: "public",
+            tasteTestVisibility: "public",
+            allowDirectRecommendations: "everyone",
+            activityFeedVisibility: "public",
+          },
+        });
+        setBioInput(authProfile.bio || "");
+        setDisplayNameInput(authProfile.displayName || "");
+      } else {
+        const user = await getCurrentUserProfile(currentUserId);
+        setProfile(user);
+        setBioInput(user.bio);
+        setDisplayNameInput(user.displayName);
+        if (user.privacy) setPrivacySettings(user.privacy);
+      }
       setPublicProfile(null);
-      setBioInput(user.bio);
-      setDisplayNameInput(user.displayName);
-      if (user.privacy) setPrivacySettings(user.privacy);
 
-      const userStats = await getUserAnimeStats("demo-user-1");
+      const userStats = await getUserAnimeStats(currentUserId);
       setStats(userStats);
+
+      const friendData = await getFriendsList(currentUserId);
+      setFriends(friendData);
+
+      const requestsData = await getPendingFriendRequests(currentUserId);
+      setPendingRequests(requestsData);
+
+      const listsData = await getUserPersonalLists(currentUserId);
+      setPersonalLists(listsData);
     }
-
-    const friendData = await getFriendsList("demo-user-1");
-    setFriends(friendData);
-
-    const requestsData = await getPendingFriendRequests("demo-user-1");
-    setPendingRequests(requestsData);
-
-    const listsData = await getUserPersonalLists("demo-user-1");
-    setPersonalLists(listsData);
   }
 
-  const handleRemoveFriend = async (friendId: string) => {
+  const handleRemoveFriend = async (friendshipId: string, friendId: string) => {
     if (confirm("¿Estás seguro de que deseas eliminar a este amigo?")) {
-      await removeFriend(friendId);
-      setFriends((prev) => prev.filter((f) => f.id !== friendId));
+      await removeFriend(friendshipId);
+      setFriends((prev) =>
+        prev.filter((f) => f.friendshipId !== friendshipId && f.id !== friendId)
+      );
     }
   };
 
@@ -154,16 +221,25 @@ function ProfileContent() {
     e.preventDefault();
     if (!newFriendUsername.trim()) return;
 
-    await sendFriendRequest(newFriendUsername);
-    setAddSuccessMessage(`Solicitud de amistad enviada a @${newFriendUsername}`);
-    setNewFriendUsername("");
-    setTimeout(() => {
-      setAddSuccessMessage("");
-      setIsAddModalOpen(false);
-    }, 2000);
+    const result = await sendFriendRequest(
+      currentUserId,
+      newFriendUsername,
+      authProfile?.displayName || profile?.displayName
+    );
+    setAddSuccessMessage(result.message);
+
+    if (result.success) {
+      setNewFriendUsername("");
+      const updatedFriends = await getFriendsList(currentUserId);
+      setFriends(updatedFriends);
+      setTimeout(() => {
+        setAddSuccessMessage("");
+        setIsAddModalOpen(false);
+      }, 2000);
+    }
   };
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (profile) {
       setProfile({
@@ -172,6 +248,24 @@ function ProfileContent() {
         bio: bioInput,
       });
     }
+
+    if (authUser) {
+      try {
+        const { createClient } = await import("@/core/supabase/client");
+        const supabase = createClient();
+        await supabase
+          .from("profiles")
+          .update({
+            display_name: displayNameInput,
+            bio: bioInput,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", authUser.id);
+      } catch (err) {
+        console.warn("No se pudo persistir cambios de perfil en Supabase:", err);
+      }
+    }
+
     setSavedSettingsSuccess(true);
     setTimeout(() => setSavedSettingsSuccess(false), 3000);
   };
@@ -253,9 +347,13 @@ function ProfileContent() {
                   </span>
                 ) : (
                   <button
-                    onClick={() => {
-                      sendFriendRequest(profile.username);
-                      alert(`Solicitud enviada a @${profile.username}`);
+                    onClick={async () => {
+                      const res = await sendFriendRequest(
+                        currentUserId,
+                        profile.username,
+                        authProfile?.displayName || profile?.displayName
+                      );
+                      alert(res.message);
                     }}
                     className="flex items-center gap-1.5 px-4 py-2 text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
                   >
@@ -379,24 +477,30 @@ function ProfileContent() {
                     </div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => {
+                        onClick={async () => {
+                          await acceptFriendRequest(
+                            req.id,
+                            currentUserId,
+                            req.senderId,
+                            authProfile?.displayName || profile?.displayName
+                          );
                           setPendingRequests((prev) => prev.filter((r) => r.id !== req.id));
-                          setFriends((prev) => [
-                            ...prev,
-                            {
-                              id: `user-new-${Date.now()}`,
-                              username: req.senderUsername,
-                              displayName: req.senderName,
-                              avatarUrl: req.senderAvatar,
-                              status: "online",
-                              favoriteGenre: "General",
-                              mutualFriendsCount: 2,
-                            },
-                          ]);
+                          const updated = await getFriendsList(currentUserId);
+                          setFriends(updated);
                         }}
                         className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
                       >
                         Aceptar
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await removeFriend(req.id);
+                          setPendingRequests((prev) => prev.filter((r) => r.id !== req.id));
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+                        title="Rechazar solicitud"
+                      >
+                        <X className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -488,7 +592,7 @@ function ProfileContent() {
                         </button>
 
                         <button
-                          onClick={() => handleRemoveFriend(friend.id)}
+                          onClick={() => handleRemoveFriend(friend.friendshipId || friend.id, friend.id)}
                           className="p-2 text-gray-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-xl border border-transparent hover:border-rose-900/50 transition-colors cursor-pointer"
                           title="Eliminar de mi lista de amigos"
                         >
