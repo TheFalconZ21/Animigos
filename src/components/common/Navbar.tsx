@@ -67,7 +67,7 @@ export default function Navbar() {
             href="/anime"
             className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-all"
           >
-            <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> Top Animes
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Animes
           </Link>
         </nav>
 

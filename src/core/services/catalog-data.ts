@@ -1,3 +1,5 @@
+export type AiringDay = "lunes" | "martes" | "miercoles" | "jueves" | "viernes" | "sabado" | "domingo";
+
 export interface ExtendedAnime {
   malId: number;
   title: string;
@@ -14,6 +16,8 @@ export interface ExtendedAnime {
   genres: string[];
   synopsis: string;
   watchedByFriends?: string[];
+  airingDay?: AiringDay;
+  broadcastTime?: string;
 }
 
 export interface StudioInfo {
