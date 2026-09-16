@@ -361,19 +361,29 @@ function AnimesCatalogContent() {
 
               {/* Centro: Input de Año y Selector de Temporada */}
               <div className="flex flex-col items-center gap-2">
-                {/* Input de Año Directo con Lista Datalist */}
+                {/* Input de Año Directo con Lista Datalist (sin spinners verticales) */}
                 <div className="relative flex items-center">
                   <input
-                    type="number"
-                    value={seasonalYear}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={seasonalYear || ""}
                     onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
-                      if (!isNaN(val)) setSeasonalYear(val);
+                      const val = e.target.value.replace(/\D/g, "");
+                      if (val === "") {
+                        setSeasonalYear(0);
+                      } else {
+                        const num = parseInt(val, 10);
+                        if (!isNaN(num)) setSeasonalYear(num);
+                      }
                     }}
-                    min={1970}
-                    max={2035}
+                    onBlur={() => {
+                      if (!seasonalYear || seasonalYear < 1960) {
+                        setSeasonalYear(new Date().getFullYear());
+                      }
+                    }}
                     list="seasonal-years-datalist"
-                    className="w-28 text-center font-black text-xl py-1 px-3 rounded-xl border bg-black/60 text-white focus:outline-none transition-all shadow-inner"
+                    className="w-32 sm:w-36 text-center font-black text-xl py-1.5 px-3 rounded-xl border bg-black/60 text-white focus:outline-none transition-all shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     style={{
                       borderColor: `rgba(${theme.primaryRgb}, 0.45)`,
                       color: "white",
