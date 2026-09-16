@@ -32,10 +32,20 @@ export interface PersonalListItem {
   };
 }
 
+export const DEMO_USER_ID = "demo-user-1";
+
 /**
  * Obtiene todas las listas personales de un usuario.
+ * Aislado: Si es demo-user-1 retorna listas de muestra; si es usuario registrado retorna sus listas reales o [].
  */
 export async function getUserPersonalLists(userId: string): Promise<PersonalList[]> {
+  if (userId === DEMO_USER_ID) {
+    return [
+      { id: "pl-1", userId: DEMO_USER_ID, name: "Obras Maestras ⭐", description: "Joyas de 10 estrellas", isDefault: false, isPublic: true, createdAt: "2026-01-15" },
+      { id: "pl-2", userId: DEMO_USER_ID, name: "Maratón Fin de Semana 🍿", description: "Para ver con amigos", isDefault: false, isPublic: true, createdAt: "2026-02-01" },
+    ];
+  }
+
   const supabase = createBrowserClient();
 
   const { data, error } = await supabase
@@ -45,10 +55,7 @@ export async function getUserPersonalLists(userId: string): Promise<PersonalList
     .order("created_at", { ascending: true });
 
   if (error || !data || data.length === 0) {
-    return [
-      { id: "pl-1", userId, name: "Obras Maestras ⭐", description: "Joyas de 10 estrellas", isDefault: false, isPublic: true, createdAt: "2026-01-15" },
-      { id: "pl-2", userId, name: "Maratón Fin de Semana 🍿", description: "Para ver con amigos", isDefault: false, isPublic: true, createdAt: "2026-02-01" },
-    ];
+    return [];
   }
 
   return data.map((item) => ({

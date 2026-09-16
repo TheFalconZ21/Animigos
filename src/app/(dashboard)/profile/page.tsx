@@ -319,11 +319,16 @@ function ProfileContent() {
             </div>
 
             <div className="space-y-1">
-              <div className="flex items-center justify-center sm:justify-start gap-2">
+              <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
                 <h1 className="text-2xl font-black text-white">{profile.displayName}</h1>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-950 text-purple-300 border border-purple-700/60 flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-amber-400" /> {profile.levelTitle}
                 </span>
+                {!authUser && !isViewingOtherUser && (
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-950/90 text-amber-300 border border-amber-600/50 flex items-center gap-1">
+                    Cuenta Demo
+                  </span>
+                )}
               </div>
               <p className="text-xs text-gray-400">
                 @{profile.username} • Miembro desde {profile.memberSince}
@@ -533,77 +538,99 @@ function ProfileContent() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-              {friends.map((friend) => (
-                <div
-                  key={friend.id}
-                  className="glass-card p-4 rounded-2xl border border-gray-800 hover:border-purple-500/30 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <img
-                        src={friend.avatarUrl}
-                        alt={friend.displayName}
-                        className="w-12 h-12 rounded-xl object-cover border border-gray-700"
-                      />
-                      <span
-                        className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-[#0B0F17] rounded-full ${
-                          friend.status === "online"
-                            ? "bg-emerald-500"
-                            : friend.status === "watching"
-                            ? "bg-purple-500"
-                            : "bg-gray-500"
-                        }`}
-                      ></span>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm font-bold text-white flex items-center gap-1">
-                        {friend.displayName}
-                      </h4>
-                      <p className="text-xs text-gray-400">@{friend.username}</p>
-                      <span className="text-[10px] text-purple-300 font-medium">
-                        Género: {friend.favoriteGenre}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <a
-                      href={`/profile?user=${friend.username}`}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-300 bg-gray-900 hover:bg-gray-800 border border-gray-700 rounded-xl transition-colors flex items-center gap-1 cursor-pointer"
-                    >
-                      <User className="w-3.5 h-3.5" /> Ver Perfil
-                    </a>
-
-                    {!isViewingOtherUser && (
-                      <>
-                        <button
-                          onClick={() => {
-                            setRecFriend(friend);
-                            setRecAnimeTitle("");
-                            setRecNote("");
-                            setRecSuccess(false);
-                          }}
-                          className="px-3 py-1.5 text-xs font-semibold text-purple-300 bg-purple-950/60 border border-purple-800/60 rounded-xl hover:bg-purple-900/60 transition-colors flex items-center gap-1.5 cursor-pointer"
-                          title={`Recomendar un anime a ${friend.displayName}`}
-                        >
-                          <Send className="w-3.5 h-3.5 text-purple-400" /> Recomendar
-                        </button>
-
-                        <button
-                          onClick={() => handleRemoveFriend(friend.friendshipId || friend.id, friend.id)}
-                          className="p-2 text-gray-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-xl border border-transparent hover:border-rose-900/50 transition-colors cursor-pointer"
-                          title="Eliminar de mi lista de amigos"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </>
-                    )}
-                  </div>
+            {friends.length === 0 ? (
+              <div className="py-12 px-4 text-center border border-dashed border-gray-800 rounded-2xl bg-gray-950/40 space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-purple-950/50 border border-purple-800/40 flex items-center justify-center mx-auto text-purple-400">
+                  <Users className="w-6 h-6" />
                 </div>
-              ))}
-            </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Aún no tienes amigos en tu lista</h3>
+                  <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+                    Busca a otros usuarios por su @nombre_de_usuario para enviarles una solicitud y comenzar a compartir recomendaciones.
+                  </p>
+                </div>
+                {!isViewingOtherUser && (
+                  <button
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-600/30 cursor-pointer"
+                  >
+                    <UserPlus className="w-4 h-4" /> Agregar Nuevo Amigo
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                {friends.map((friend) => (
+                  <div
+                    key={friend.id}
+                    className="glass-card p-4 rounded-2xl border border-gray-800 hover:border-purple-500/30 flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <img
+                          src={friend.avatarUrl}
+                          alt={friend.displayName}
+                          className="w-12 h-12 rounded-xl object-cover border border-gray-700"
+                        />
+                        <span
+                          className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-[#0B0F17] rounded-full ${
+                            friend.status === "online"
+                              ? "bg-emerald-500"
+                              : friend.status === "watching"
+                              ? "bg-purple-500"
+                              : "bg-gray-500"
+                          }`}
+                        ></span>
+                      </div>
+
+                      <div>
+                        <h4 className="text-sm font-bold text-white flex items-center gap-1">
+                          {friend.displayName}
+                        </h4>
+                        <p className="text-xs text-gray-400">@{friend.username}</p>
+                        <span className="text-[10px] text-purple-300 font-medium">
+                          Género: {friend.favoriteGenre}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={`/profile?user=${friend.username}`}
+                        className="px-3 py-1.5 text-xs font-semibold text-gray-300 bg-gray-900 hover:bg-gray-800 border border-gray-700 rounded-xl transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        <User className="w-3.5 h-3.5" /> Ver Perfil
+                      </a>
+
+                      {!isViewingOtherUser && (
+                        <>
+                          <button
+                            onClick={() => {
+                              setRecFriend(friend);
+                              setRecAnimeTitle("");
+                              setRecNote("");
+                              setRecSuccess(false);
+                            }}
+                            className="px-3 py-1.5 text-xs font-semibold text-purple-300 bg-purple-950/60 border border-purple-800/60 rounded-xl hover:bg-purple-900/60 transition-colors flex items-center gap-1.5 cursor-pointer"
+                            title={`Recomendar un anime a ${friend.displayName}`}
+                          >
+                            <Send className="w-3.5 h-3.5 text-purple-400" /> Recomendar
+                          </button>
+
+                          <button
+                            onClick={() => handleRemoveFriend(friend.friendshipId || friend.id, friend.id)}
+                            className="p-2 text-gray-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-xl border border-transparent hover:border-rose-900/50 transition-colors cursor-pointer"
+                            title="Eliminar de mi lista de amigos"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -724,31 +751,53 @@ function ProfileContent() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {personalLists.map((list) => (
-                <div
-                  key={list.id}
-                  className="glass-card p-5 rounded-2xl border border-gray-800 hover:border-emerald-500/40 flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="w-10 h-10 rounded-xl bg-emerald-950/60 border border-emerald-800/40 flex items-center justify-center text-emerald-400 font-bold mb-3">
-                      <List className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-base font-bold text-white">{list.name}</h3>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {list.isPublic ? "Pública para amigos" : "Privada"}
-                    </p>
-                  </div>
-
-                  <a
-                    href={`/personal-lists?filter=${list.name.toLowerCase()}`}
-                    className="mt-4 w-full py-2 text-center text-xs font-bold text-emerald-300 bg-emerald-950/50 hover:bg-emerald-900/60 rounded-xl border border-emerald-800/40 transition-colors block"
-                  >
-                    Abrir Lista →
-                  </a>
+            {personalLists.length === 0 ? (
+              <div className="py-12 px-4 text-center border border-dashed border-gray-800 rounded-2xl bg-gray-950/40 space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-950/50 border border-emerald-800/40 flex items-center justify-center mx-auto text-emerald-400">
+                  <List className="w-6 h-6" />
                 </div>
-              ))}
-            </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Sin listas personales</h3>
+                  <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+                    Aún no has creado carpetas o listas personales para organizar tus animes.
+                  </p>
+                </div>
+                {!isViewingOtherUser && (
+                  <a
+                    href="/personal-lists"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/30"
+                  >
+                    <Plus className="w-4 h-4" /> Crear Mi Primera Lista
+                  </a>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {personalLists.map((list) => (
+                  <div
+                    key={list.id}
+                    className="glass-card p-5 rounded-2xl border border-gray-800 hover:border-emerald-500/40 flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="w-10 h-10 rounded-xl bg-emerald-950/60 border border-emerald-800/40 flex items-center justify-center text-emerald-400 font-bold mb-3">
+                        <List className="w-5 h-5" />
+                      </div>
+                      <h3 className="text-base font-bold text-white">{list.name}</h3>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {list.isPublic ? "Pública para amigos" : "Privada"}
+                      </p>
+                    </div>
+
+                    <a
+                      href={`/personal-lists?filter=${list.name.toLowerCase()}`}
+                      className="mt-4 w-full py-2 text-center text-xs font-bold text-emerald-300 bg-emerald-950/50 hover:bg-emerald-900/60 rounded-xl border border-emerald-800/40 transition-colors block"
+                    >
+                      Abrir Lista →
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )
       )}

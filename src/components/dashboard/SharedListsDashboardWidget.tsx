@@ -3,14 +3,17 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getUserSharedListsOverview, SharedListOverview } from "@/core/services/shared-list.service";
-import { Users, AlertTriangle, Vote, Trophy, ArrowRight } from "lucide-react";
+import { useAuth } from "@/core/contexts/AuthContext";
+import { Users, AlertTriangle, Vote, Trophy, ArrowRight, Plus } from "lucide-react";
 
 export default function SharedListsDashboardWidget() {
+  const { user } = useAuth();
+  const activeUserId = user?.id || "demo-user-1";
   const [lists, setLists] = useState<SharedListOverview[]>([]);
 
   useEffect(() => {
-    getUserSharedListsOverview().then(setLists);
-  }, []);
+    getUserSharedListsOverview(activeUserId).then(setLists);
+  }, [activeUserId]);
 
   return (
     <div className="glass-card p-5 rounded-3xl border border-gray-800 space-y-4">
@@ -23,13 +26,34 @@ export default function SharedListsDashboardWidget() {
             Grupos en proceso de votación
           </p>
         </div>
-        <Link href="/shared-lists" className="text-xs font-semibold text-purple-400 hover:text-purple-300 shrink-0">
-          Ver todas ({lists.length}) →
-        </Link>
+        {lists.length > 0 && (
+          <Link href="/shared-lists" className="text-xs font-semibold text-purple-400 hover:text-purple-300 shrink-0">
+            Ver todas ({lists.length}) →
+          </Link>
+        )}
       </div>
 
-      {/* Lista Vertical (Vertical Continuous Strip) */}
-      <div className="flex flex-col gap-3.5">
+      {/* Si no hay listas aún */}
+      {lists.length === 0 ? (
+        <div className="py-6 px-4 text-center border border-dashed border-gray-800 rounded-2xl bg-gray-950/40 space-y-3">
+          <div className="w-10 h-10 rounded-full bg-cyan-950/40 border border-cyan-800/40 flex items-center justify-center mx-auto text-cyan-400">
+            <Users className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-300">Sin grupos activos</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">
+              Crea tu primer grupo para coordinar con amigos qué anime ver juntos.
+            </p>
+          </div>
+          <Link
+            href="/shared-lists/new"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-600/30"
+          >
+            <Plus className="w-3.5 h-3.5" /> Crear Grupo
+          </Link>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3.5">
         {lists.map((list) => {
           const hasUnvoted = list.unvotedCandidatesCount > 0;
 
@@ -101,6 +125,7 @@ export default function SharedListsDashboardWidget() {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
 } from "@/core/services/feed-activity.service";
 import { sendFriendRecommendation } from "@/core/services/recommendations.service";
 import { getFriendsList, FriendUser } from "@/core/services/friends.service";
+import { useAuth } from "@/core/contexts/AuthContext";
 import { getScoreBadgeStyle } from "@/core/utils/score-theme";
 import {
   Sparkles,
@@ -64,14 +65,17 @@ export default function SocialActivityFeed() {
   const [pollOpt2, setPollOpt2] = useState("");
   const [pollOpt3, setPollOpt3] = useState("");
 
+  const { user } = useAuth();
+  const activeUserId = user?.id || "demo-user-1";
+
   useEffect(() => {
     loadFeed();
-  }, [filter]);
+  }, [filter, activeUserId]);
 
   async function loadFeed() {
     const data = await getFeedActivities(filter);
     setActivities(data);
-    const friendsData = await getFriendsList("demo-user-1");
+    const friendsData = await getFriendsList(activeUserId);
     setFriends(friendsData);
     if (friendsData.length > 0) setTargetFriendId(friendsData[0].id);
   }

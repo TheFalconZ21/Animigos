@@ -308,51 +308,90 @@ export interface SharedListOverview {
   inviteCode: string;
 }
 
+export const DEMO_USER_ID = "demo-user-1";
+
 /**
  * Obtiene un resumen de las listas compartidas activas del usuario, incluyendo el ganador y la cantidad de candidatos pendientes por votar.
+ * Aislado: Para el usuario demo devuelve los 3 grupos de muestra; para usuarios reales consulta sus listas o devuelve [].
  */
-export async function getUserSharedListsOverview(userId: string = "demo-user-1"): Promise<SharedListOverview[]> {
-  // Datos enriquecidos demostrativos para el Dashboard y MVP
-  return [
-    {
-      id: "demo-list-1",
-      name: "Anime de los Viernes 🍿",
-      status: "Votación en curso",
-      membersCount: 4,
-      topCandidate: {
-        title: "Frieren: Beyond Journey's End",
-        happinessScore: 9.4,
-        imageUrl: "https://cdn.myanimelist.net/images/anime/1015/138006.jpg",
+export async function getUserSharedListsOverview(userId: string = DEMO_USER_ID): Promise<SharedListOverview[]> {
+  // Aislamiento: Contenido mock enriquecido solo para la cuenta demo
+  if (userId === DEMO_USER_ID) {
+    return [
+      {
+        id: "demo-list-1",
+        name: "Anime de los Viernes 🍿",
+        status: "Votación en curso",
+        membersCount: 4,
+        topCandidate: {
+          title: "Frieren: Beyond Journey's End",
+          happinessScore: 9.4,
+          imageUrl: "https://cdn.myanimelist.net/images/anime/1015/138006.jpg",
+        },
+        unvotedCandidatesCount: 2, // 2 animes sin votar -> activa advertencia
+        inviteCode: "viernes2026",
       },
-      unvotedCandidatesCount: 2, // 2 animes sin votar -> activa advertencia
-      inviteCode: "viernes2026",
-    },
-    {
-      id: "demo-list-2",
-      name: "Maratón Vacaciones 🌴",
-      status: "Candidatos abiertos",
-      membersCount: 3,
-      topCandidate: {
-        title: "Steins;Gate",
-        happinessScore: 8.8,
-        imageUrl: "https://cdn.myanimelist.net/images/anime/1935/127974.jpg",
+      {
+        id: "demo-list-2",
+        name: "Maratón Vacaciones 🌴",
+        status: "Candidatos abiertos",
+        membersCount: 3,
+        topCandidate: {
+          title: "Steins;Gate",
+          happinessScore: 8.8,
+          imageUrl: "https://cdn.myanimelist.net/images/anime/1935/127974.jpg",
+        },
+        unvotedCandidatesCount: 0, // 0 animes sin votar -> al día
+        inviteCode: "maraton2026",
       },
-      unvotedCandidatesCount: 0, // 0 animes sin votar -> al día
-      inviteCode: "maraton2026",
-    },
-    {
-      id: "demo-list-3",
-      name: "Noche de Suspenso & Misterio 🕵️",
-      status: "Votación activa",
-      membersCount: 5,
-      topCandidate: {
-        title: "Monster",
-        happinessScore: 9.1,
-        imageUrl: "https://cdn.myanimelist.net/images/anime/10/18741.jpg",
+      {
+        id: "demo-list-3",
+        name: "Noche de Suspenso & Misterio 🕵️",
+        status: "Votación activa",
+        membersCount: 5,
+        topCandidate: {
+          title: "Monster",
+          happinessScore: 9.1,
+          imageUrl: "https://cdn.myanimelist.net/images/anime/10/18741.jpg",
+        },
+        unvotedCandidatesCount: 3, // 3 animes sin votar -> activa advertencia
+        inviteCode: "misterio2026",
       },
-      unvotedCandidatesCount: 3, // 3 animes sin votar -> activa advertencia
-      inviteCode: "misterio2026",
-    },
-  ];
+    ];
+  }
+
+  const supabase = createBrowserClient();
+  try {
+    const { data: memberLists } = await supabase
+      .from("shared_list_members")
+      .select("shared_list_id")
+      .eq("user_id", userId);
+
+    const memberListIds = memberLists?.map((m: any) => m.shared_list_id) || [];
+
+    let query = supabase.from("shared_lists").select("id, name, status, invite_code, created_by");
+    if (memberListIds.length > 0) {
+      query = query.or(`created_by.eq.${userId},id.in.(${memberListIds.join(",")})`);
+    } else {
+      query = query.eq("created_by", userId);
+    }
+
+    const { data: lists, error } = await query;
+    if (error || !lists || lists.length === 0) {
+      return [];
+    }
+
+    return lists.map((l: any) => ({
+      id: l.id,
+      name: l.name,
+      status: l.status === "voting" ? "Votación en curso" : "Activa",
+      membersCount: 1,
+      topCandidate: null,
+      unvotedCandidatesCount: 0,
+      inviteCode: l.invite_code,
+    }));
+  } catch (err) {
+    return [];
+  }
 }
 

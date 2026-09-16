@@ -86,10 +86,19 @@ const DEMO_REQUESTS: FriendRequest[] = [
   },
 ];
 
+export const DEMO_USER_ID = "demo-user-1";
+
 /**
  * Obtiene la lista de amigos confirmados (status = 'accepted').
+ * Si userId es el usuario demo, devuelve los datos de muestra de la plataforma.
+ * Para usuarios reales registrados, consulta la base de datos Supabase o devuelve [].
  */
 export async function getFriendsList(userId: string): Promise<FriendUser[]> {
+  // Aislamiento de cuenta demo: contenido mock exclusivo para el usuario demo
+  if (userId === DEMO_USER_ID) {
+    return DEMO_FRIENDS;
+  }
+
   const supabase = createBrowserClient();
 
   try {
@@ -107,7 +116,7 @@ export async function getFriendsList(userId: string): Promise<FriendUser[]> {
       .eq("status", "accepted");
 
     if (error || !data || data.length === 0) {
-      return DEMO_FRIENDS;
+      return [];
     }
 
     return data.map((row: any) => {
@@ -125,19 +134,24 @@ export async function getFriendsList(userId: string): Promise<FriendUser[]> {
         bio: otherProfile?.bio,
         status: "online",
         favoriteGenre: "General",
-        mutualFriendsCount: 3,
+        mutualFriendsCount: 0,
       };
     });
   } catch (err) {
-    console.warn("Error al consultar amigos en Supabase, utilizando fallback local:", err);
-    return DEMO_FRIENDS;
+    console.warn("Error al consultar amigos reales en Supabase:", err);
+    return [];
   }
 }
 
 /**
  * Obtiene las solicitudes de amistad pendientes dirigidas al usuario actual.
+ * Si userId es demo, devuelve la solicitud de prueba; para usuarios reales devuelve su lista real o [].
  */
 export async function getPendingFriendRequests(userId: string): Promise<FriendRequest[]> {
+  if (userId === DEMO_USER_ID) {
+    return DEMO_REQUESTS;
+  }
+
   const supabase = createBrowserClient();
 
   try {
@@ -155,7 +169,7 @@ export async function getPendingFriendRequests(userId: string): Promise<FriendRe
       .eq("status", "pending");
 
     if (error || !data || data.length === 0) {
-      return DEMO_REQUESTS;
+      return [];
     }
 
     return data.map((row: any) => ({
@@ -173,7 +187,7 @@ export async function getPendingFriendRequests(userId: string): Promise<FriendRe
     }));
   } catch (err) {
     console.warn("Error al consultar solicitudes pendientes en Supabase:", err);
-    return DEMO_REQUESTS;
+    return [];
   }
 }
 

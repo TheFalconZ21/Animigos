@@ -75,10 +75,19 @@ function mapRowToNotification(row: any): NotificationItem {
   };
 }
 
+export const DEMO_USER_ID = "demo-user-1";
+
 /**
  * Obtiene todas las notificaciones de un usuario.
+ * Para el usuario demo devuelve las notificaciones de muestra de Animigos.
+ * Para usuarios registrados reales devuelve únicamente sus notificaciones reales desde Supabase.
  */
 export async function getUserNotifications(userId: string): Promise<NotificationItem[]> {
+  // Aislamiento de cuenta demo
+  if (userId === DEMO_USER_ID) {
+    return DEMO_NOTIFICATIONS;
+  }
+
   const supabase = createBrowserClient();
 
   try {
@@ -90,13 +99,13 @@ export async function getUserNotifications(userId: string): Promise<Notification
       .limit(30);
 
     if (error || !data || data.length === 0) {
-      return DEMO_NOTIFICATIONS;
+      return [];
     }
 
     return data.map(mapRowToNotification);
   } catch (err) {
-    console.warn("Error al obtener notificaciones de Supabase, usando locales:", err);
-    return DEMO_NOTIFICATIONS;
+    console.warn("Error al obtener notificaciones reales de Supabase:", err);
+    return [];
   }
 }
 
@@ -104,6 +113,11 @@ export async function getUserNotifications(userId: string): Promise<Notification
  * Marca una notificación como leída en Supabase.
  */
 export async function markNotificationAsRead(notificationId: string): Promise<boolean> {
+  const notif = DEMO_NOTIFICATIONS.find((n) => n.id === notificationId);
+  if (notif) {
+    notif.isRead = true;
+  }
+
   const supabase = createBrowserClient();
 
   try {
@@ -123,6 +137,11 @@ export async function markNotificationAsRead(notificationId: string): Promise<bo
  * Marca todas las notificaciones del usuario como leídas.
  */
 export async function markAllNotificationsAsRead(userId: string): Promise<boolean> {
+  if (userId === DEMO_USER_ID) {
+    DEMO_NOTIFICATIONS.forEach((n) => (n.isRead = true));
+    return true;
+  }
+
   const supabase = createBrowserClient();
 
   try {

@@ -91,13 +91,20 @@ const mockRecommendations: FriendRecommendation[] = [
   },
 ];
 
+export const DEMO_USER_ID = "demo-user-1";
+
 /**
  * Obtiene las recomendaciones dirigidas al usuario actual o públicas de amigos.
+ * Aislado: Si es demo-user-1 muestra recomendaciones demo; para usuarios reales retorna su lista o [].
  */
 export async function getFriendRecommendations(
-  userId: string = "demo-user-1",
+  userId: string = DEMO_USER_ID,
   filter: "all" | "direct" | "general" = "all"
 ): Promise<FriendRecommendation[]> {
+  if (userId !== DEMO_USER_ID) {
+    return [];
+  }
+
   if (filter === "direct") {
     return mockRecommendations.filter((r) => r.type === "direct");
   }
