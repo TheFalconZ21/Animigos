@@ -5,6 +5,7 @@ import Navbar from "@/components/common/Navbar";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Users, UserCheck, Sparkles, ArrowRight } from "lucide-react";
+import { addGuestJoinedGroup } from "@/core/services/guest-session.service";
 
 export default function JoinSharedListPage({ params }: { params: { code: string } }) {
   const router = useRouter();
@@ -16,6 +17,12 @@ export default function JoinSharedListPage({ params }: { params: { code: string 
     if (!guestName.trim()) return;
 
     setJoining(true);
+    addGuestJoinedGroup({
+      id: "demo-list-1",
+      name: "Anime de los Viernes 🍿",
+      inviteCode: params.code || "viernes2026",
+      guestName: guestName.trim(),
+    });
     // Simulación de unión de usuario invitado
     setTimeout(() => {
       router.push(`/shared-lists/demo-list-1`);

@@ -4,7 +4,14 @@ import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Navbar from "@/components/common/Navbar";
 import AnimeDetailModal from "@/components/common/AnimeDetailModal";
+import GuestAddAnimeGuardModal from "@/components/common/GuestAddAnimeGuardModal";
 import { useTheme } from "@/core/contexts/ThemeContext";
+import { useAuth } from "@/core/contexts/AuthContext";
+import {
+  getGuestJoinedGroups,
+  postulateAnimeToGroup,
+  isAnimePostulatedInAnyGuestGroup,
+} from "@/core/services/guest-session.service";
 import {
   MOCK_TOP_ANIMES,
   MOCK_STUDIOS,
@@ -44,8 +51,15 @@ function AnimesCatalogContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { theme } = useTheme();
+  const { user } = useAuth();
+  const isAuthenticated = Boolean(user);
 
-  // Calcular color opuesto/de contraste alto para el texto seleccionado
+  // Estados para modo invitado y guardián de adición de animes
+  const [guardAnime, setGuardAnime] = useState<{ malId: number; title: string; imageUrl?: string } | null>(null);
+  const [isGuestGuardOpen, setIsGuestGuardOpen] = useState(false);
+  const [guestFeedbackToast, setGuestFeedbackToast] = useState<string | null>(null);
+
+  // Calcular color opuesto/de contraste alto para el texto seleccionado y botones
   const activeTextColor = useMemo(() => {
     const hex = (theme.primaryColor || "#FFFFFF").replace("#", "");
     if (hex.length === 6) {
@@ -256,9 +270,52 @@ function AnimesCatalogContent() {
     setIsDropdownOpen(false);
   };
 
-  const handleAddToListQuick = (e: React.MouseEvent, malId: number) => {
+  // Cargar postulaciones previas para invitados
+  useEffect(() => {
+    if (!isAuthenticated) {
+      const syncGuestPostulations = () => {
+        const map: Record<number, boolean> = {};
+        MOCK_TOP_ANIMES.forEach((a) => {
+          if (isAnimePostulatedInAnyGuestGroup(a.malId)) {
+            map[a.malId] = true;
+          }
+        });
+        setAddedMap((prev) => ({ ...prev, ...map }));
+      };
+      syncGuestPostulations();
+      window.addEventListener("animigos_guest_postulations_changed", syncGuestPostulations);
+      return () =>
+        window.removeEventListener("animigos_guest_postulations_changed", syncGuestPostulations);
+    }
+  }, [isAuthenticated]);
+
+  const handleAddToListQuick = (
+    e: React.MouseEvent,
+    anime: { malId: number; title: string; imageUrl?: string }
+  ) => {
     e.stopPropagation();
-    setAddedMap((prev) => ({ ...prev, [malId]: true }));
+    if (isAuthenticated) {
+      // Usuario autenticado: añade a su lista personal
+      setAddedMap((prev) => ({ ...prev, [anime.malId]: true }));
+    } else {
+      // Usuario invitado: verificar membresía en listas grupales
+      const groups = getGuestJoinedGroups();
+      if (groups.length === 0) {
+        // Bloqueado si no es parte de ninguna lista grupal
+        setGuardAnime(anime);
+        setIsGuestGuardOpen(true);
+      } else if (groups.length === 1) {
+        // Pertenece a 1 lista grupal -> Postular directamente
+        postulateAnimeToGroup(groups[0].id, anime);
+        setAddedMap((prev) => ({ ...prev, [anime.malId]: true }));
+        setGuestFeedbackToast(`Postulado a ${groups[0].name}`);
+        setTimeout(() => setGuestFeedbackToast(null), 3000);
+      } else {
+        // Pertenece a múltiples listas grupales -> Abrir selector
+        setGuardAnime(anime);
+        setIsGuestGuardOpen(true);
+      }
+    }
   };
 
   // Seasonal Navigation Handlers
@@ -554,28 +611,34 @@ function AnimesCatalogContent() {
                                   )}
                                 </div>
 
-                                {/* Botón Inferior: Añadir a Mi Lista */}
+                                {/* Botón Inferior: Añadir a Lista con Alto Contraste */}
                                 <button
                                   type="button"
-                                  onClick={(e) => handleAddToListQuick(e, anime.malId)}
-                                  className="w-full py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center justify-center gap-1 shadow border"
+                                  onClick={(e) =>
+                                    handleAddToListQuick(e, {
+                                      malId: anime.malId,
+                                      title: anime.title,
+                                      imageUrl: anime.imageUrl,
+                                    })
+                                  }
+                                  className="w-full py-2 rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 shadow hover:scale-[1.02] active:scale-95"
                                   style={{
-                                    background: isAdded
-                                      ? "rgba(16, 185, 129, 0.25)"
-                                      : `linear-gradient(135deg, rgba(${theme.primaryRgb}, 0.3), rgba(${theme.primaryRgb}, 0.1))`,
-                                    color: isAdded ? "#6ee7b7" : "white",
-                                    borderColor: isAdded
-                                      ? "rgba(16, 185, 129, 0.5)"
-                                      : `rgba(${theme.primaryRgb}, 0.35)`,
+                                    background: isAdded ? "#059669" : theme.primaryColor,
+                                    color: isAdded ? "#FFFFFF" : activeTextColor,
+                                    boxShadow: isAdded
+                                      ? "0 2px 8px rgba(5, 150, 105, 0.3)"
+                                      : `0 3px 12px rgba(${theme.primaryRgb}, 0.25)`,
                                   }}
                                 >
                                   {isAdded ? (
                                     <>
-                                      <Check className="w-3 h-3 text-emerald-400" /> En tu lista
+                                      <Check className="w-3 h-3 text-white" />{" "}
+                                      {!isAuthenticated ? "Postulado en Grupo" : "En tu lista"}
                                     </>
                                   ) : (
                                     <>
-                                      <Plus className="w-3 h-3" style={{ color: theme.primaryColor }} /> Mi Lista
+                                      <Plus className="w-3 h-3" style={{ color: activeTextColor }} />{" "}
+                                      {!isAuthenticated ? "Añadir a Lista Grupal" : "Añadir a Lista"}
                                     </>
                                   )}
                                 </button>
@@ -988,27 +1051,34 @@ function AnimesCatalogContent() {
                           </div>
                         )}
 
-                        {/* Action Button */}
+                        {/* Action Button: Alto Contraste Garantizado */}
                         <button
-                          onClick={(e) => handleAddToListQuick(e, anime.malId)}
-                          className="w-full mt-2 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border"
+                          type="button"
+                          onClick={(e) =>
+                            handleAddToListQuick(e, {
+                              malId: anime.malId,
+                              title: anime.title,
+                              imageUrl: anime.imageUrl,
+                            })
+                          }
+                          className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow hover:scale-[1.02] active:scale-95"
                           style={{
-                            background: isAdded
-                              ? "rgba(16, 185, 129, 0.25)"
-                              : `linear-gradient(135deg, rgba(${theme.primaryRgb}, 0.25), rgba(${theme.primaryRgb}, 0.1))`,
-                            color: isAdded ? "#6ee7b7" : "white",
-                            borderColor: isAdded
-                              ? "rgba(16, 185, 129, 0.5)"
-                              : `rgba(${theme.primaryRgb}, 0.35)`,
+                            background: isAdded ? "#059669" : theme.primaryColor,
+                            color: isAdded ? "#FFFFFF" : activeTextColor,
+                            boxShadow: isAdded
+                              ? "0 2px 8px rgba(5, 150, 105, 0.3)"
+                              : `0 4px 14px rgba(${theme.primaryRgb}, 0.25)`,
                           }}
                         >
                           {isAdded ? (
                             <>
-                              <Check className="w-3.5 h-3.5 text-emerald-400" /> En tu lista
+                              <Check className="w-3.5 h-3.5 text-white" />{" "}
+                              {!isAuthenticated ? "Postulado en Grupo" : "En tu lista"}
                             </>
                           ) : (
                             <>
-                              <Plus className="w-3.5 h-3.5" style={{ color: theme.primaryColor }} /> Agregar a Lista
+                              <Plus className="w-3.5 h-3.5" style={{ color: activeTextColor }} />{" "}
+                              {!isAuthenticated ? "Añadir a Lista Grupal" : "Añadir a Lista"}
                             </>
                           )}
                         </button>
@@ -1038,7 +1108,34 @@ function AnimesCatalogContent() {
         <AnimeDetailModal
           anime={selectedAnimeModal}
           onClose={() => setSelectedAnimeModal(null)}
+          onAddToList={(anime) => {
+            setAddedMap((prev) => ({ ...prev, [anime.malId]: true }));
+          }}
         />
+      )}
+
+      {/* Modal Guardián de Invitados para Añadir Anime */}
+      <GuestAddAnimeGuardModal
+        isOpen={isGuestGuardOpen}
+        onClose={() => {
+          setIsGuestGuardOpen(false);
+          setGuardAnime(null);
+        }}
+        anime={guardAnime}
+        onSuccessPostulated={(groupName) => {
+          if (guardAnime) {
+            setAddedMap((prev) => ({ ...prev, [guardAnime.malId]: true }));
+          }
+          setGuestFeedbackToast(`Postulado con éxito a ${groupName}`);
+          setTimeout(() => setGuestFeedbackToast(null), 3000);
+        }}
+      />
+
+      {/* Floating Toast de Retroalimentación para Invitados */}
+      {guestFeedbackToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-bold border border-emerald-400/50 animate-bounce">
+          <Check className="w-4 h-4" /> {guestFeedbackToast}
+        </div>
       )}
     </div>
   );

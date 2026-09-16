@@ -5,6 +5,7 @@ import Navbar from "@/components/common/Navbar";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/core/contexts/AuthContext";
+import { addGuestJoinedGroup } from "@/core/services/guest-session.service";
 import {
   Users,
   Plus,
@@ -59,6 +60,14 @@ export default function SharedListsIndexPage() {
     );
 
     if (matchingList) {
+      if (!isAuthenticated) {
+        addGuestJoinedGroup({
+          id: matchingList.id,
+          name: matchingList.name,
+          inviteCode: matchingList.inviteCode,
+          guestName: "Invitado",
+        });
+      }
       router.push(`/shared-lists/${matchingList.id}`);
     } else {
       router.push(`/join/${cleanCode}`);
