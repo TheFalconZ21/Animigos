@@ -14,7 +14,6 @@ import {
   HeartHandshake,
   Plus,
   LogIn,
-  UserPlus,
   Users,
 } from "lucide-react";
 
@@ -101,9 +100,9 @@ export default function UserDropdown({ user: propUser }: UserDropdownProps) {
         <div
           className="absolute right-0 mt-2 w-60 rounded-2xl border shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-150 backdrop-blur-2xl text-left"
           style={{
-            backgroundColor: "var(--theme-card-bg, #0F172A)",
+            backgroundColor: "#0B0F17",
             borderColor: `rgba(${theme.primaryRgb}, 0.4)`,
-            boxShadow: `0 20px 50px rgba(0, 0, 0, 0.7), 0 0 25px rgba(${theme.primaryRgb}, 0.15)`,
+            boxShadow: `0 20px 50px rgba(0, 0, 0, 0.85), 0 0 25px rgba(${theme.primaryRgb}, 0.15)`,
           }}
         >
           {/* Header del dropdown */}
@@ -173,39 +172,29 @@ export default function UserDropdown({ user: propUser }: UserDropdownProps) {
 
           {/* Sección de Autenticación */}
           <div className="border-t border-white/10 mt-1.5 pt-1.5 px-1.5 space-y-1">
-            {isAuthenticated ? (
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 rounded-xl transition-colors cursor-pointer text-left"
+            {!isAuthenticated && (
+              <Link
+                href="/login"
+                onClick={() => setIsOpen(false)}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all"
+                style={{
+                  backgroundColor: `rgba(${theme.primaryRgb}, 0.2)`,
+                  color: "white",
+                }}
               >
-                <LogOut className="w-4 h-4" />
-                Cerrar Sesión
-              </button>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  onClick={() => setIsOpen(false)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all"
-                  style={{
-                    backgroundColor: `rgba(${theme.primaryRgb}, 0.2)`,
-                    color: "white",
-                  }}
-                >
-                  <LogIn className="w-4 h-4" style={{ color: theme.primaryColor }} />
-                  Iniciar Sesión
-                </Link>
-                <Link
-                  href="/register"
-                  onClick={() => setIsOpen(false)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
-                >
-                  <UserPlus className="w-4 h-4 text-emerald-400" />
-                  Crear Cuenta Nueva
-                </Link>
-              </>
+                <LogIn className="w-4 h-4" style={{ color: theme.primaryColor }} />
+                Iniciar Sesión
+              </Link>
             )}
+
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 rounded-xl transition-colors cursor-pointer text-left"
+            >
+              <LogOut className="w-4 h-4" />
+              Cerrar Sesión
+            </button>
           </div>
         </div>
       )}

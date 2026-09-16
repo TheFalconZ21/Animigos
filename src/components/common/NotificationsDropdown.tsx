@@ -152,9 +152,9 @@ export default function NotificationsDropdown() {
         <div
           className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-150 backdrop-blur-2xl text-left"
           style={{
-            backgroundColor: "var(--theme-card-bg, #0F172A)",
+            backgroundColor: "#0B0F17",
             borderColor: `rgba(${theme.primaryRgb}, 0.4)`,
-            boxShadow: `0 20px 50px rgba(0, 0, 0, 0.7), 0 0 25px rgba(${theme.primaryRgb}, 0.15)`,
+            boxShadow: `0 20px 50px rgba(0, 0, 0, 0.85), 0 0 25px rgba(${theme.primaryRgb}, 0.15)`,
           }}
         >
           {/* Header */}
