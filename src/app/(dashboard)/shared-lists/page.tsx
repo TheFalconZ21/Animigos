@@ -5,7 +5,8 @@ import Navbar from "@/components/common/Navbar";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/core/contexts/AuthContext";
-import { addGuestJoinedGroup } from "@/core/services/guest-session.service";
+import { addGuestJoinedGroup, removeGuestJoinedGroup } from "@/core/services/guest-session.service";
+import ConfirmLeaveGroupModal from "@/components/shared-lists/ConfirmLeaveGroupModal";
 import {
   Users,
   Plus,
@@ -15,6 +16,7 @@ import {
   Check,
   Info,
   Sparkles,
+  LogOut,
 } from "lucide-react";
 
 export default function SharedListsIndexPage() {
@@ -26,7 +28,11 @@ export default function SharedListsIndexPage() {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  const sharedLists = [
+  // Estado para gestión de abandono de lista grupal
+  const [leavingList, setLeavingList] = useState<{ id: string; name: string; inviteCode: string } | null>(null);
+  const [leaveToast, setLeaveToast] = useState<string | null>(null);
+
+  const [sharedLists, setSharedLists] = useState([
     {
       id: "demo-list-1",
       name: "Anime de los Viernes 🍿",
@@ -45,7 +51,7 @@ export default function SharedListsIndexPage() {
       inviteCode: "maraton2026",
       candidatesCount: 5,
     },
-  ];
+  ]);
 
   const handleJoinWithCode = (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +87,15 @@ export default function SharedListsIndexPage() {
       setCopiedCode(list.id);
       setTimeout(() => setCopiedCode(null), 2500);
     }
+  };
+
+  const handleConfirmLeave = () => {
+    if (!leavingList) return;
+    removeGuestJoinedGroup(leavingList.id);
+    setSharedLists((prev) => prev.filter((l) => l.id !== leavingList.id));
+    setLeaveToast(`Has abandonado la lista "${leavingList.name}"`);
+    setLeavingList(null);
+    setTimeout(() => setLeaveToast(null), 3500);
   };
 
   return (
@@ -195,17 +210,45 @@ export default function SharedListsIndexPage() {
                 </div>
               </div>
 
-              <Link
-                href={`/shared-lists/${list.id}`}
-                className="w-full py-3 text-center text-sm font-bold text-black bg-white hover:bg-slate-200 rounded-2xl transition-all flex items-center justify-center gap-2 active:scale-[0.99] shadow-lg shadow-white/10"
-              >
-                <span>Entrar a la Sala de Votación</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              {/* Botón Principal de Entrada + Botón de Abandonar Lista */}
+              <div className="flex items-center gap-2.5 pt-2">
+                <Link
+                  href={`/shared-lists/${list.id}`}
+                  className="flex-1 py-3 text-center text-sm font-bold text-black bg-white hover:bg-slate-200 rounded-2xl transition-all flex items-center justify-center gap-2 active:scale-[0.99] shadow-lg shadow-white/10"
+                >
+                  <span>Entrar a la Sala de Votación</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setLeavingList(list)}
+                  className="px-4 py-3 rounded-2xl border border-rose-500/30 text-rose-400 hover:text-white hover:bg-rose-950/60 transition-all flex items-center justify-center gap-1.5 text-xs font-bold shrink-0 hover:border-rose-500/60 active:scale-95"
+                  title="Abandonar esta lista grupal"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline">Abandonar</span>
+                </button>
+              </div>
             </div>
           ))}
         </div>
       </main>
+
+      {/* Modal de Confirmación para Abandonar Lista */}
+      <ConfirmLeaveGroupModal
+        isOpen={Boolean(leavingList)}
+        groupName={leavingList?.name || "Lista Grupal"}
+        onClose={() => setLeavingList(null)}
+        onConfirm={handleConfirmLeave}
+      />
+
+      {/* Toast de Retroalimentación al Abandonar */}
+      {leaveToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-rose-950/90 text-rose-200 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-bold border border-rose-500/40 animate-fadeIn">
+          <LogOut className="w-4 h-4 text-rose-400" /> {leaveToast}
+        </div>
+      )}
     </div>
   );
 }

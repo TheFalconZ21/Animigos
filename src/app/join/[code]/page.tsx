@@ -35,13 +35,11 @@ export default function JoinSharedListPage({ params }: { params: { code: string 
 
       <main className="flex-1 max-w-md w-full mx-auto px-4 py-16 flex flex-col justify-center">
         <div className="glass-panel p-8 rounded-3xl border border-gray-800 shadow-2xl text-center">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-600 to-cyan-500 p-0.5 mx-auto mb-4 shadow-lg shadow-purple-500/20">
-            <div className="w-full h-full bg-[#0B0F17] rounded-[14px] flex items-center justify-center">
-              <Users className="w-7 h-7 text-purple-400" />
-            </div>
+          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 p-0.5 mx-auto mb-4 shadow-lg shadow-white/5 flex items-center justify-center">
+            <Users className="w-7 h-7 text-white" />
           </div>
 
-          <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider block mb-1">
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">
             Invitación de Grupo
           </span>
           <h1 className="text-2xl font-bold text-white mb-2">
@@ -62,14 +60,14 @@ export default function JoinSharedListPage({ params }: { params: { code: string 
                 value={guestName}
                 onChange={(e) => setGuestName(e.target.value)}
                 required
-                className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-400 transition-colors"
+                className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-white transition-colors"
               />
             </div>
 
             <button
               type="submit"
               disabled={joining || !guestName.trim()}
-              className="w-full py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 rounded-xl shadow-lg shadow-purple-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-3 text-sm font-extrabold text-black bg-white hover:bg-gray-200 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               <span>{joining ? "Entrando a la sala..." : "Entrar como Invitado"}</span>
               <ArrowRight className="w-4 h-4" />
@@ -87,7 +85,7 @@ export default function JoinSharedListPage({ params }: { params: { code: string 
 
           <Link
             href="/login"
-            className="w-full py-2.5 text-xs font-semibold text-purple-300 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-800/50 rounded-xl transition-colors flex items-center justify-center gap-1.5"
+            className="w-full py-2.5 text-xs font-semibold text-gray-300 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-xl transition-colors flex items-center justify-center gap-1.5"
           >
             <UserCheck className="w-3.5 h-3.5" /> Iniciar Sesión con mi Cuenta
           </Link>

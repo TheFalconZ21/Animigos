@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { SlidersHorizontal, X, Check, RefreshCw, Film, Calendar, Building2, EyeOff, Clock, Sparkles } from "lucide-react";
+import { SlidersHorizontal, X, Check, RefreshCw, Film, Calendar, Building2, EyeOff, Clock } from "lucide-react";
+import { useTheme } from "@/core/contexts/ThemeContext";
 
 export interface GroupCriteriaState {
   minEpisodes: number;
@@ -56,6 +57,10 @@ export default function GroupCriteriaModal({
   initialCriteria,
   onSaveCriteria,
 }: GroupCriteriaModalProps) {
+  const { theme } = useTheme();
+  const isNeutral = !theme || theme.id === "Default" || theme.primaryColor === "#FFFFFF";
+  const activeTextColor = isNeutral ? "#000000" : "#FFFFFF";
+
   const [criteria, setCriteria] = useState<GroupCriteriaState>(initialCriteria);
 
   if (!isOpen) return null;
@@ -109,11 +114,23 @@ export default function GroupCriteriaModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
-      <div className="bg-[#0F172A] border border-purple-500/50 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-6">
+      <div
+        className="bg-[#0F172A] rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-6 border"
+        style={{
+          borderColor: isNeutral ? "rgba(255, 255, 255, 0.15)" : `rgba(${theme.primaryRgb || "255, 255, 255"}, 0.4)`,
+        }}
+      >
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-gray-800 pb-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-2xl bg-purple-950/80 border border-purple-800 text-purple-400">
+            <div
+              className="p-2 rounded-2xl border flex items-center justify-center"
+              style={{
+                backgroundColor: isNeutral ? "rgba(255, 255, 255, 0.1)" : `rgba(${theme.primaryRgb || "255, 255, 255"}, 0.15)`,
+                borderColor: isNeutral ? "rgba(255, 255, 255, 0.2)" : `rgba(${theme.primaryRgb || "255, 255, 255"}, 0.4)`,
+                color: isNeutral ? "#FFFFFF" : theme.primaryColor,
+              }}
+            >
               <SlidersHorizontal className="w-5 h-5" />
             </div>
             <div>
@@ -144,7 +161,7 @@ export default function GroupCriteriaModal({
                   max="100"
                   value={criteria.minEpisodes}
                   onChange={(e) => setCriteria({ ...criteria, minEpisodes: parseInt(e.target.value) || 1 })}
-                  className="w-full bg-gray-800 text-white font-extrabold text-sm px-3 py-2 rounded-xl border border-gray-700 focus:outline-none focus:border-purple-500"
+                  className="w-full bg-gray-800 text-white font-extrabold text-sm px-3 py-2 rounded-xl border border-gray-700 focus:outline-none focus:border-gray-400"
                 />
               </div>
               <div>
@@ -155,16 +172,15 @@ export default function GroupCriteriaModal({
                   max="500"
                   value={criteria.maxEpisodes}
                   onChange={(e) => setCriteria({ ...criteria, maxEpisodes: parseInt(e.target.value) || 28 })}
-                  className="w-full bg-gray-800 text-white font-extrabold text-sm px-3 py-2 rounded-xl border border-gray-700 focus:outline-none focus:border-purple-500"
+                  className="w-full bg-gray-800 text-white font-extrabold text-sm px-3 py-2 rounded-xl border border-gray-700 focus:outline-none focus:border-gray-400"
                 />
               </div>
             </div>
           </div>
-
           {/* 2. Géneros Preferidos (Multiselect) */}
           <div className="space-y-2">
             <label className="text-xs font-extrabold text-gray-200 uppercase tracking-wider flex items-center gap-2">
-              <Film className="w-4 h-4 text-purple-400" /> Géneros Preferidos (Selección Múltiple)
+              <Film className="w-4 h-4 text-cyan-400" /> Géneros Preferidos (Selección Múltiple)
             </label>
             <div className="flex flex-wrap gap-2 bg-gray-900/60 p-4 rounded-2xl border border-gray-800">
               {AVAILABLE_GENRES.map((genre) => {
@@ -176,9 +192,21 @@ export default function GroupCriteriaModal({
                     onClick={() => toggleGenre(genre)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                       isSelected
-                        ? "bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-600/30"
+                        ? isNeutral
+                          ? "bg-white text-black border-white shadow-md font-black"
+                          : "text-white shadow-md font-black"
                         : "bg-gray-800 text-gray-400 border-gray-700 hover:text-white"
                     }`}
+                    style={
+                      isSelected && !isNeutral
+                        ? {
+                            backgroundColor: theme.primaryColor,
+                            borderColor: theme.primaryColor,
+                            boxShadow: `0 4px 12px -2px rgba(${theme.primaryRgb || "255, 255, 255"}, 0.4)`,
+                            color: activeTextColor,
+                          }
+                        : {}
+                    }
                   >
                     {isSelected ? `✓ ${genre}` : `+ ${genre}`}
                   </button>
@@ -201,7 +229,7 @@ export default function GroupCriteriaModal({
                   max="2026"
                   value={criteria.minYear}
                   onChange={(e) => setCriteria({ ...criteria, minYear: parseInt(e.target.value) || 2010 })}
-                  className="w-full bg-gray-800 text-white font-extrabold text-sm px-3 py-2 rounded-xl border border-gray-700 focus:outline-none focus:border-purple-500"
+                  className="w-full bg-gray-800 text-white font-extrabold text-sm px-3 py-2 rounded-xl border border-gray-700 focus:outline-none focus:border-gray-400"
                 />
               </div>
               <div>
@@ -212,7 +240,7 @@ export default function GroupCriteriaModal({
                   max="2026"
                   value={criteria.maxYear}
                   onChange={(e) => setCriteria({ ...criteria, maxYear: parseInt(e.target.value) || 2026 })}
-                  className="w-full bg-gray-800 text-white font-extrabold text-sm px-3 py-2 rounded-xl border border-gray-700 focus:outline-none focus:border-purple-500"
+                  className="w-full bg-gray-800 text-white font-extrabold text-sm px-3 py-2 rounded-xl border border-gray-700 focus:outline-none focus:border-gray-400"
                 />
               </div>
             </div>
@@ -289,13 +317,20 @@ export default function GroupCriteriaModal({
                       unseenByMembersOnly: !prev.unseenByMembersOnly,
                     }))
                   }
-                  className={`w-12 h-6 rounded-full transition-colors p-1 flex items-center cursor-pointer ${
-                    criteria.unseenByMembersOnly ? "bg-purple-600" : "bg-gray-700"
-                  }`}
+                  className="w-12 h-6 rounded-full transition-colors p-1 flex items-center cursor-pointer"
+                  style={{
+                    backgroundColor: criteria.unseenByMembersOnly
+                      ? isNeutral
+                        ? "#FFFFFF"
+                        : theme.primaryColor
+                      : "#374151",
+                  }}
                 >
                   <div
-                    className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                      criteria.unseenByMembersOnly ? "translate-x-6" : "translate-x-0"
+                    className={`w-4 h-4 rounded-full transition-transform ${
+                      criteria.unseenByMembersOnly
+                        ? `translate-x-6 ${isNeutral ? "bg-black" : "bg-white"}`
+                        : "translate-x-0 bg-white"
                     }`}
                   />
                 </button>
@@ -323,7 +358,20 @@ export default function GroupCriteriaModal({
               </button>
               <button
                 type="submit"
-                className="px-5 py-2.5 text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl shadow-lg shadow-purple-600/30 transition-all flex items-center gap-2 cursor-pointer"
+                className={`px-5 py-2.5 text-xs font-extrabold rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer ${
+                  isNeutral
+                    ? "bg-white hover:bg-gray-200 text-black shadow-white/10"
+                    : "text-white hover:brightness-110"
+                }`}
+                style={
+                  !isNeutral
+                    ? {
+                        backgroundColor: theme.primaryColor,
+                        boxShadow: `0 10px 15px -3px rgba(${theme.primaryRgb || "255, 255, 255"}, 0.3)`,
+                        color: activeTextColor,
+                      }
+                    : {}
+                }
               >
                 <Check className="w-4 h-4" /> Guardar Criterios Grupales
               </button>

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { HappinessScoreResult } from "@/core/algorithms/happiness-score";
-import { Sparkles, Trophy, BarChart3, Users, Star, Clock, Info, ShieldCheck, AlertTriangle, Filter, Target, Zap } from "lucide-react";
+import { Trophy, BarChart3, Users, Info, Target, Zap } from "lucide-react";
+import { useTheme } from "@/core/contexts/ThemeContext";
 
 export interface CandidateWithResult {
   id: string;
@@ -20,15 +21,25 @@ interface HappinessAnalyticsChartProps {
   candidates: CandidateWithResult[];
 }
 
-// Colores armonizados para los candidatos
-const CANDIDATE_COLORS = [
-  { stroke: "#F59E0B", fill: "rgba(245, 158, 11, 0.25)", text: "text-amber-400", bg: "bg-amber-500" }, // #1 Gold/Amber
-  { stroke: "#A855F7", fill: "rgba(168, 85, 247, 0.25)", text: "text-purple-400", bg: "bg-purple-500" }, // #2 Purple
-  { stroke: "#06B6D4", fill: "rgba(6, 182, 212, 0.25)", text: "text-cyan-400", bg: "bg-cyan-500" },   // #3 Cyan
-  { stroke: "#10B981", fill: "rgba(16, 185, 129, 0.25)", text: "text-emerald-400", bg: "bg-emerald-500" }, // #4 Emerald
-];
-
 export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyticsChartProps) {
+  const { theme } = useTheme();
+  const isNeutral = !theme || theme.id === "Default" || theme.primaryColor === "#FFFFFF";
+  const primaryColor = isNeutral ? "#FFFFFF" : theme.primaryColor;
+  const primaryRgb = isNeutral ? "255, 255, 255" : (theme.primaryRgb || "255, 255, 255");
+  const activeTextColor = isNeutral ? "#000000" : "#FFFFFF";
+
+  const candidateColors = [
+    { stroke: "#F59E0B", fill: "rgba(245, 158, 11, 0.25)", text: "text-amber-400", bg: "bg-amber-500" }, // #1 Gold/Amber
+    {
+      stroke: isNeutral ? "#38BDF8" : theme.primaryColor,
+      fill: isNeutral ? "rgba(56, 189, 248, 0.25)" : `rgba(${primaryRgb}, 0.25)`,
+      text: isNeutral ? "text-sky-400" : "text-white",
+      bg: isNeutral ? "bg-sky-500" : "bg-white",
+    }, // #2 Sky / Theme Primary
+    { stroke: "#06B6D4", fill: "rgba(6, 182, 212, 0.25)", text: "text-cyan-400", bg: "bg-cyan-500" },   // #3 Cyan
+    { stroke: "#10B981", fill: "rgba(16, 185, 129, 0.25)", text: "text-emerald-400", bg: "bg-emerald-500" }, // #4 Emerald
+  ];
+
   const [selectedTab, setSelectedTab] = useState<"stacked" | "radar" | "quadrant">("quadrant");
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
 
@@ -82,12 +93,30 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
         </div>
 
         {/* Consenso del Grupo */}
-        <div className="glass-card p-5 rounded-3xl border border-purple-800/40 bg-gradient-to-br from-purple-950/30 via-gray-900 to-gray-950 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-purple-900/60 border border-purple-700/50 flex items-center justify-center text-purple-400 shrink-0">
+        <div
+          className="glass-card p-5 rounded-3xl border flex items-center gap-4"
+          style={{
+            borderColor: isNeutral ? "rgba(255, 255, 255, 0.15)" : `rgba(${primaryRgb}, 0.4)`,
+            background: isNeutral
+              ? "linear-gradient(to bottom right, rgba(255, 255, 255, 0.05), #0F172A)"
+              : `linear-gradient(to bottom right, rgba(${primaryRgb}, 0.15), #0F172A)`,
+          }}
+        >
+          <div
+            className="w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0"
+            style={{
+              backgroundColor: isNeutral ? "rgba(255, 255, 255, 0.1)" : `rgba(${primaryRgb}, 0.2)`,
+              borderColor: isNeutral ? "rgba(255, 255, 255, 0.2)" : `rgba(${primaryRgb}, 0.4)`,
+              color: isNeutral ? "#FFFFFF" : primaryColor,
+            }}
+          >
             <Target className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-[10px] text-purple-300 font-extrabold uppercase tracking-wider block">
+            <span
+              className="text-[10px] font-extrabold uppercase tracking-wider block"
+              style={{ color: isNeutral ? "#E2E8F0" : primaryColor }}
+            >
               Dispersión Promedio
             </span>
             <span className="text-lg font-black text-white">
@@ -119,7 +148,7 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-800/80">
           <div>
             <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-purple-400" /> Visualizador de Felicidad Grupal
+              <BarChart3 className="w-5 h-5" style={{ color: isNeutral ? "#FFFFFF" : primaryColor }} /> Visualizador de Felicidad Grupal
             </h3>
             <p className="text-xs text-gray-400">
               Selecciona el tipo de gráfico para comparar las opciones de manera rápida e intuitiva
@@ -132,9 +161,16 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
               onClick={() => setSelectedTab("quadrant")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
                 selectedTab === "quadrant"
-                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md"
+                  ? isNeutral
+                    ? "bg-white text-black font-extrabold shadow-md"
+                    : "text-white shadow-md font-extrabold"
                   : "text-gray-400 hover:text-white"
               }`}
+              style={
+                selectedTab === "quadrant" && !isNeutral
+                  ? { backgroundColor: primaryColor, color: activeTextColor }
+                  : {}
+              }
             >
               <Zap className="w-3.5 h-3.5 text-amber-400" /> Matriz de Decisión (2D)
             </button>
@@ -142,9 +178,16 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
               onClick={() => setSelectedTab("stacked")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
                 selectedTab === "stacked"
-                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md"
+                  ? isNeutral
+                    ? "bg-white text-black font-extrabold shadow-md"
+                    : "text-white shadow-md font-extrabold"
                   : "text-gray-400 hover:text-white"
               }`}
+              style={
+                selectedTab === "stacked" && !isNeutral
+                  ? { backgroundColor: primaryColor, color: activeTextColor }
+                  : {}
+              }
             >
               <BarChart3 className="w-3.5 h-3.5 text-cyan-400" /> Desglose Apilado
             </button>
@@ -152,9 +195,16 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
               onClick={() => setSelectedTab("radar")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
                 selectedTab === "radar"
-                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md"
+                  ? isNeutral
+                    ? "bg-white text-black font-extrabold shadow-md"
+                    : "text-white shadow-md font-extrabold"
                   : "text-gray-400 hover:text-white"
               }`}
+              style={
+                selectedTab === "radar" && !isNeutral
+                  ? { backgroundColor: primaryColor, color: activeTextColor }
+                  : {}
+              }
             >
               <Target className="w-3.5 h-3.5 text-pink-400" /> Gráfico Radar (5 Ejes)
             </button>
@@ -176,11 +226,11 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
               {/* Fondo con 4 Cuadrantes Etiquetados */}
               <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 pointer-events-none divide-x divide-y divide-gray-800/60">
                 {/* Cuadrante Superior Izquierdo: Amor u Odio */}
-                <div className="p-3 bg-purple-950/10 flex flex-col justify-start items-start">
-                  <span className="text-[10px] font-extrabold text-purple-400/70 uppercase tracking-wider bg-purple-950/40 px-2 py-0.5 rounded border border-purple-800/30">
+                <div className="p-3 bg-slate-900/40 flex flex-col justify-start items-start">
+                  <span className="text-[10px] font-extrabold text-amber-300 uppercase tracking-wider bg-amber-950/40 px-2 py-0.5 rounded border border-amber-800/30">
                     ⚡ Amor u Odio (Polarizado)
                   </span>
-                  <span className="text-[9px] text-gray-500 mt-0.5">Altas ganas pero desacuerdo</span>
+                  <span className="text-[9px] text-gray-400 mt-0.5">Altas ganas pero desacuerdo</span>
                 </div>
 
                 {/* Cuadrante Superior Derecho: Ganador Seguro */}
@@ -211,7 +261,7 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
               {/* Puntos Interactivos de los Candidatos */}
               <div className="relative w-full h-full">
                 {ranked.map((cand, idx) => {
-                  const colorConfig = CANDIDATE_COLORS[idx % CANDIDATE_COLORS.length];
+                  const colorConfig = candidateColors[idx % candidateColors.length];
                   
                   // X-axis: Consensus (0 to 10). Consensus = Math.max(0, 10 - dispersion * 2.5)
                   const consensusScore = Math.max(5, Math.min(95, (10 - cand.result.interestDispersion * 2.2) * 10));
@@ -252,7 +302,7 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
                       </div>
 
                       {/* Tooltip Label */}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center bg-[#0F172A] border border-purple-500/50 px-3 py-1.5 rounded-xl shadow-2xl z-40 whitespace-nowrap">
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center bg-[#0F172A] border border-gray-700 px-3 py-1.5 rounded-xl shadow-2xl z-40 whitespace-nowrap">
                         <span className="text-xs font-bold text-white">{cand.title}</span>
                         <span className="text-[10px] text-gray-300">
                           Ganas: {cand.result.interestMean} • SD: ±{cand.result.interestDispersion}
@@ -267,7 +317,7 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
             {/* Leyenda de Candidatos */}
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               {ranked.map((cand, idx) => {
-                const colorConfig = CANDIDATE_COLORS[idx % CANDIDATE_COLORS.length];
+                const colorConfig = candidateColors[idx % candidateColors.length];
                 const isSelected = selectedCandidateId === cand.id;
 
                 return (
@@ -301,8 +351,8 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
             <div className="flex items-center justify-between text-xs text-gray-400">
               <span>Desglose de contribución por cada factor del Algoritmo de Felicidad (0 - 10 pts)</span>
               <div className="flex items-center gap-3 text-[10px] font-bold">
-                <span className="flex items-center gap-1 text-purple-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-500" /> Ganas Grupo
+                <span className="flex items-center gap-1 text-sky-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-sky-500" /> Ganas Grupo
                 </span>
                 <span className="flex items-center gap-1 text-amber-400">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> Nota MAL
@@ -327,7 +377,7 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
                   <div key={cand.id} className="p-4 rounded-2xl bg-slate-950/60 border border-gray-800/80 space-y-2">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-extrabold text-white flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-gray-800 text-purple-400 font-black text-[10px] flex items-center justify-center">
+                        <span className="w-5 h-5 rounded-full bg-gray-800 text-cyan-400 font-black text-[10px] flex items-center justify-center">
                           #{idx + 1}
                         </span>
                         {cand.title}
@@ -342,7 +392,7 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
                       {/* Factor 1: Ganas del Grupo */}
                       <div
                         style={{ width: `${interestPct}%` }}
-                        className="h-full bg-purple-500 hover:brightness-110 transition-all"
+                        className="h-full bg-sky-500 hover:brightness-110 transition-all"
                         title={`Ganas del Grupo: ${cand.result.interestMean} pts`}
                       />
                       {/* Factor 2: Nota MAL */}
@@ -369,7 +419,7 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
 
                     {/* Footnote Breakdown Values */}
                     <div className="flex flex-wrap items-center justify-between text-[10px] text-gray-400 pt-1 font-semibold">
-                      <span className="text-purple-300">Ganas: +{cand.result.interestMean}</span>
+                      <span className="text-sky-300">Ganas: +{cand.result.interestMean}</span>
                       <span className="text-amber-300">Calidad MAL: +{cand.result.malScoreContribution}</span>
                       <span className="text-cyan-300">Duración: +{cand.result.durationContribution}</span>
                       <span className="text-rose-400">Descuento Polarización: -{cand.result.dispersionPenalty}</span>
@@ -441,7 +491,7 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
 
                 {/* Candidate Polygon Shapes */}
                 {ranked.map((cand, idx) => {
-                  const colorConfig = CANDIDATE_COLORS[idx % CANDIDATE_COLORS.length];
+                  const colorConfig = candidateColors[idx % candidateColors.length];
                   
                   // Values for the 5 axes normalized 0-1
                   const vGroup = cand.result.interestMean / 10;
@@ -495,7 +545,7 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
 
               <div className="space-y-2">
                 {ranked.map((cand, idx) => {
-                  const colorConfig = CANDIDATE_COLORS[idx % CANDIDATE_COLORS.length];
+                  const colorConfig = candidateColors[idx % candidateColors.length];
                   const isSelected = selectedCandidateId === cand.id;
 
                   return (
@@ -504,9 +554,16 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
                       onClick={() => setSelectedCandidateId(isSelected ? null : cand.id)}
                       className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
                         isSelected
-                          ? "bg-slate-900 border-purple-500/50"
+                          ? isNeutral
+                            ? "bg-slate-900 border-white/40 shadow-md"
+                            : "bg-slate-900 border-white/20 shadow-md"
                           : "bg-slate-950/60 border-gray-800 opacity-60"
                       }`}
+                      style={
+                        isSelected && !isNeutral
+                          ? { borderColor: primaryColor }
+                          : {}
+                      }
                     >
                       <div className="flex items-center gap-2.5">
                         <span
@@ -538,7 +595,7 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
       {/* 3. Lista de Explicabilidad Detallada */}
       <div className="glass-panel p-6 rounded-3xl border border-gray-800 space-y-3">
         <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
-          <Info className="w-4 h-4 text-purple-400" /> Resumen de Factores Clave del Algoritmo
+          <Info className="w-4 h-4" style={{ color: isNeutral ? "#FFFFFF" : primaryColor }} /> Resumen de Factores Clave del Algoritmo
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {ranked.map((cand) => (
@@ -546,7 +603,7 @@ export default function HappinessAnalyticsChart({ candidates }: HappinessAnalyti
               <span className="text-xs font-bold text-white block">{cand.title}</span>
               {cand.result.explanations.map((exp, i) => (
                 <p key={i} className="text-[11px] text-gray-300 leading-relaxed flex items-start gap-1.5">
-                  <span className="text-purple-400">•</span>
+                  <span className="font-bold" style={{ color: isNeutral ? "#FFFFFF" : primaryColor }}>•</span>
                   <span>{exp}</span>
                 </p>
               ))}

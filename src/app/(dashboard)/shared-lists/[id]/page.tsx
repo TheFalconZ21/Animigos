@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Navbar from "@/components/common/Navbar";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTheme } from "@/core/contexts/ThemeContext";
+import { removeGuestJoinedGroup } from "@/core/services/guest-session.service";
+import ConfirmLeaveGroupModal from "@/components/shared-lists/ConfirmLeaveGroupModal";
 import {
   Users,
   Vote,
@@ -19,15 +23,41 @@ import {
   Star,
   Clock,
   SlidersHorizontal,
+  LogOut,
 } from "lucide-react";
 import { calculateHappinessScore } from "@/core/algorithms/happiness-score";
 import HappinessAnalyticsChart from "@/components/shared-lists/HappinessAnalyticsChart";
 import GroupCriteriaModal, { GroupCriteriaState } from "@/components/shared-lists/GroupCriteriaModal";
 
 export default function SharedListWorkspacePage({ params }: { params: { id: string } }) {
+  const router = useRouter();
+  const { theme } = useTheme();
+
   // Pestaña principal y modo de visualización de candidatos
   const [mainTab, setMainTab] = useState<"voting" | "analytics">("voting");
   const [viewMode, setViewMode] = useState<"cards" | "compact">("cards");
+
+  // Modal para abandonar la lista grupal
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+
+  // Nombre de la sala según el ID
+  const listName = params.id === "demo-list-2" ? "Maratón Vacaciones 🌴" : "Anime de los Viernes 🍿";
+
+  // Verificar si es tema neutro (Default blanco y negro) o tema con acento activo
+  const isNeutral = theme.id === "Default" || theme.primaryColor === "#FFFFFF";
+
+  // Color de alto contraste para botones activos
+  const activeTextColor = useMemo(() => {
+    const hex = (theme.primaryColor || "#FFFFFF").replace("#", "");
+    if (hex.length === 6) {
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+      return yiq >= 128 ? "#05070B" : "#FFFFFF";
+    }
+    return "#05070B";
+  }, [theme.primaryColor]);
 
   // Modal de Criterios Ideales del Grupo
   const [isCriteriaModalOpen, setIsCriteriaModalOpen] = useState(false);
@@ -128,7 +158,7 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
   const [confirmedFeedback, setConfirmedFeedback] = useState<Record<string, boolean>>({});
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Manejar cambio en borrador (Slider o Input Numérico) - NO REORDENA EL RANKING
+  // Manejar cambio en borrador (Slider o Input Numérico)
   const handleDraftChange = (candidateId: string, val: number) => {
     const clamped = isNaN(val) ? 0 : Math.max(0, Math.min(10, val));
     setDraftVotes((prev) => ({ ...prev, [candidateId]: clamped }));
@@ -179,9 +209,16 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
   };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText("https://animigos.com/join/viernes2026");
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(`${window.location.origin}/join/viernes2026`);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    }
+  };
+
+  const handleConfirmLeaveGroup = () => {
+    removeGuestJoinedGroup(params.id);
+    router.push("/shared-lists");
   };
 
   // Ordenar candidatos únicamente según los votos CONFIRMADOS
@@ -209,58 +246,66 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* Group Header */}
-        <div className="glass-panel p-6 rounded-3xl border border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        {/* Group Header: Adaptativo al tema activo o neutro */}
+        <div className="glass-panel p-6 rounded-3xl border border-white/15 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="px-3 py-1 text-xs font-bold bg-purple-950 text-purple-300 border border-purple-800 rounded-full">
+              <span
+                className="px-3 py-1 text-xs font-bold rounded-full border flex items-center gap-1.5 transition-colors"
+                style={{
+                  backgroundColor: isNeutral ? "rgba(255, 255, 255, 0.1)" : `rgba(${theme.primaryRgb}, 0.15)`,
+                  color: isNeutral ? "#F1F5F9" : theme.primaryColor,
+                  borderColor: isNeutral ? "rgba(255, 255, 255, 0.2)" : `rgba(${theme.primaryRgb}, 0.35)`,
+                }}
+              >
                 ● Votación en Tiempo Real
               </span>
               <span className="text-xs text-gray-400 flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-cyan-400" /> 4 integrantes (1 Invitado)
+                <Users className="w-3.5 h-3.5 text-white" /> 4 integrantes (1 Invitado)
               </span>
             </div>
             <h1 className="text-3xl font-extrabold text-white tracking-tight">
-              Anime de los Viernes 🍿
+              {listName}
             </h1>
             <p className="text-sm text-gray-400 mt-1">
-              Ajusta tu puntuación por slider o número y presiona <strong className="text-purple-300">Votar</strong> para confirmar y actualizar el ranking.
+              Ajusta tu puntuación por slider o número y presiona <strong className="text-white">Votar</strong> para confirmar y actualizar el ranking.
             </p>
 
             {/* Active Group Criteria Banner */}
             <div className="flex flex-wrap items-center gap-2 mt-3 text-xs">
-              <span className="text-gray-400 font-semibold flex items-center gap-1">
-                <SlidersHorizontal className="w-3.5 h-3.5 text-purple-400" /> Criterios del Grupo:
+              <span className="text-gray-300 font-semibold flex items-center gap-1">
+                <SlidersHorizontal className="w-3.5 h-3.5" style={{ color: isNeutral ? "#FFFFFF" : theme.primaryColor }} /> Criterios del Grupo:
               </span>
-              <span className="px-2.5 py-0.5 rounded-lg bg-gray-900 text-purple-300 border border-purple-800/40 font-bold">
+              <span className="px-2.5 py-0.5 rounded-lg bg-white/5 text-slate-200 border border-white/15 font-bold">
                 ⏱️ {groupCriteria.minEpisodes}-{groupCriteria.maxEpisodes} caps
               </span>
-              <span className="px-2.5 py-0.5 rounded-lg bg-gray-900 text-cyan-300 border border-cyan-800/40 font-bold">
+              <span className="px-2.5 py-0.5 rounded-lg bg-white/5 text-slate-200 border border-white/15 font-bold">
                 🎬 {groupCriteria.genres.join(", ")}
               </span>
-              <span className="px-2.5 py-0.5 rounded-lg bg-gray-900 text-amber-300 border border-amber-800/40 font-bold">
+              <span className="px-2.5 py-0.5 rounded-lg bg-white/5 text-slate-200 border border-white/15 font-bold">
                 📅 {groupCriteria.minYear}-{groupCriteria.maxYear}
               </span>
               {groupCriteria.unseenByMembersOnly && (
-                <span className="px-2.5 py-0.5 rounded-lg bg-rose-950 text-rose-300 border border-rose-800/40 font-bold">
+                <span className="px-2.5 py-0.5 rounded-lg bg-rose-950/60 text-rose-300 border border-rose-800/50 font-bold">
                   👁️ No vistos
                 </span>
               )}
             </div>
           </div>
 
+          {/* Acciones de la Sala */}
           <div className="flex items-center gap-2.5 flex-wrap md:flex-nowrap">
             <button
               onClick={() => setIsCriteriaModalOpen(true)}
-              className="px-4 py-2.5 text-sm font-semibold text-purple-200 bg-purple-950/60 hover:bg-purple-900/80 border border-purple-700/50 rounded-xl transition-all flex items-center gap-2 cursor-pointer shrink-0"
+              className="px-4 py-2.5 text-sm font-semibold text-white bg-white/10 hover:bg-white/15 border border-white/20 rounded-xl transition-all flex items-center gap-2 cursor-pointer shrink-0"
             >
-              <SlidersHorizontal className="w-4 h-4 text-purple-400" />
+              <SlidersHorizontal className="w-4 h-4 text-white" />
               <span>Criterios Ideales</span>
             </button>
 
             <button
               onClick={handleCopyLink}
-              className="px-4 py-2.5 text-sm font-semibold text-cyan-300 bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-800/60 rounded-xl transition-all flex items-center gap-2 cursor-pointer shrink-0"
+              className="px-4 py-2.5 text-sm font-semibold text-slate-200 bg-white/5 hover:bg-white/10 border border-white/15 rounded-xl transition-all flex items-center gap-2 cursor-pointer shrink-0"
             >
               {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
               <span>{copiedLink ? "¡Link Copiado!" : "Invitar Amigos"}</span>
@@ -268,36 +313,84 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
 
             <Link
               href="/anime"
-              className="px-4 py-2.5 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-500 rounded-xl transition-all flex items-center gap-2 shrink-0"
+              className="px-4 py-2.5 text-sm font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 shadow-md hover:scale-[1.02] active:scale-95"
+              style={{
+                background: theme.primaryColor,
+                color: activeTextColor,
+                boxShadow: `0 4px 14px rgba(${theme.primaryRgb}, 0.25)`,
+              }}
             >
-              <Plus className="w-4 h-4" /> Postular Anime
+              <Plus className="w-4 h-4" style={{ color: activeTextColor }} /> Postular Anime
             </Link>
+
+            {/* BOTÓN ABANDONAR LISTA (VISUAL 1) */}
+            <button
+              type="button"
+              onClick={() => setIsLeaveModalOpen(true)}
+              className="px-3.5 py-2.5 text-sm font-semibold text-rose-400 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 hover:border-rose-500/60 rounded-xl transition-all flex items-center gap-2 shrink-0 cursor-pointer active:scale-95"
+              title="Abandonar esta lista grupal"
+            >
+              <LogOut className="w-4 h-4 text-rose-400" />
+              <span className="hidden sm:inline">Abandonar Lista</span>
+            </button>
           </div>
         </div>
 
-        {/* Control Bar: Pestañas Principales (Lista vs Gráfico) + Modos de Vista (Cards vs Lista Compacta) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-3xl bg-gray-900/80 border border-gray-800">
+        {/* Control Bar: Pestañas Principales (Lista vs Gráfico) + Modos de Vista */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-3xl bg-gray-900/80 border border-white/15">
           {/* Main Tab Switcher */}
-          <div className="flex items-center bg-gray-950 p-1 rounded-2xl border border-gray-800 text-xs font-bold">
+          <div className="flex items-center bg-black/70 p-1 rounded-2xl border border-white/15 text-xs font-bold">
             <button
               onClick={() => setMainTab("voting")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all cursor-pointer font-bold ${
                 mainTab === "voting"
-                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md"
+                  ? isNeutral
+                    ? "bg-white text-black shadow-md"
+                    : "text-white shadow-md"
                   : "text-gray-400 hover:text-white"
               }`}
+              style={
+                mainTab === "voting" && !isNeutral
+                  ? {
+                      background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
+                      color: activeTextColor,
+                    }
+                  : undefined
+              }
             >
-              <Vote className="w-4 h-4 text-purple-300" /> 📋 Lista de Votación
+              <Vote
+                className="w-4 h-4"
+                style={{
+                  color: mainTab === "voting" ? (isNeutral ? "#05070B" : activeTextColor) : undefined,
+                }}
+              />
+              <span>📋 Lista de Votación</span>
             </button>
             <button
               onClick={() => setMainTab("analytics")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all cursor-pointer font-bold ${
                 mainTab === "analytics"
-                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md"
+                  ? isNeutral
+                    ? "bg-white text-black shadow-md"
+                    : "text-white shadow-md"
                   : "text-gray-400 hover:text-white"
               }`}
+              style={
+                mainTab === "analytics" && !isNeutral
+                  ? {
+                      background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
+                      color: activeTextColor,
+                    }
+                  : undefined
+              }
             >
-              <BarChart3 className="w-4 h-4 text-amber-400" /> 📊 Gráfico & Análisis de Felicidad
+              <BarChart3
+                className="w-4 h-4"
+                style={{
+                  color: mainTab === "analytics" ? (isNeutral ? "#05070B" : activeTextColor) : undefined,
+                }}
+              />
+              <span>📊 Gráfico & Análisis de Felicidad</span>
             </button>
           </div>
 
@@ -313,28 +406,28 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
                 </button>
               )}
 
-              <div className="flex items-center bg-gray-950 p-1 rounded-2xl border border-gray-800 text-xs font-semibold">
+              <div className="flex items-center bg-black/70 p-1 rounded-2xl border border-white/15 text-xs font-semibold">
                 <button
                   onClick={() => setViewMode("cards")}
                   title="Vista Tarjetas (Detallada)"
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
                     viewMode === "cards"
-                      ? "bg-gray-800 text-white shadow-sm"
+                      ? "bg-white/15 text-white shadow-sm"
                       : "text-gray-400 hover:text-white"
                   }`}
                 >
-                  <LayoutGrid className="w-3.5 h-3.5 text-purple-400" /> Tarjetas
+                  <LayoutGrid className="w-3.5 h-3.5 text-white" /> Tarjetas
                 </button>
                 <button
                   onClick={() => setViewMode("compact")}
                   title="Vista Lista Compacta (Rápida)"
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
                     viewMode === "compact"
-                      ? "bg-gray-800 text-white shadow-sm"
+                      ? "bg-white/15 text-white shadow-sm"
                       : "text-gray-400 hover:text-white"
                   }`}
                 >
-                  <List className="w-3.5 h-3.5 text-cyan-400" /> Lista Compacta
+                  <List className="w-3.5 h-3.5 text-white" /> Lista Compacta
                 </button>
               </div>
             </div>
@@ -371,7 +464,7 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
                       className={`glass-card p-6 rounded-3xl border transition-all ${
                         isWinner
                           ? "border-amber-500/50 bg-gradient-to-r from-amber-950/20 via-gray-900/60 to-gray-900/40 shadow-xl shadow-amber-950/20"
-                          : "border-gray-800 hover:border-gray-700"
+                          : "border-white/10 hover:border-white/25 bg-[#0C111D]/80"
                       }`}
                     >
                       <div className="flex flex-col md:flex-row gap-6 items-start">
@@ -380,11 +473,25 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
                           <img
                             src={cand.imageUrl}
                             alt={cand.title}
-                            className="w-28 h-40 object-cover rounded-2xl border border-gray-700 shadow-md"
+                            className="w-28 h-40 object-cover rounded-2xl border border-white/15 shadow-md"
                           />
-                          <span className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-cyan-500 text-white font-extrabold text-sm flex items-center justify-center shadow-lg">
-                            #{index + 1}
-                          </span>
+                          {/* Insignia de Ranking Adaptable */}
+                          {isWinner ? (
+                            <span className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-amber-500 text-slate-950 font-black text-sm flex items-center justify-center shadow-lg border border-amber-300">
+                              #1
+                            </span>
+                          ) : (
+                            <span
+                              className="absolute -top-3 -left-3 w-8 h-8 rounded-full text-sm font-extrabold flex items-center justify-center shadow-lg border"
+                              style={{
+                                backgroundColor: isNeutral ? "rgba(255, 255, 255, 0.15)" : `rgba(${theme.primaryRgb}, 0.25)`,
+                                color: isNeutral ? "#FFFFFF" : theme.primaryColor,
+                                borderColor: isNeutral ? "rgba(255, 255, 255, 0.3)" : `rgba(${theme.primaryRgb}, 0.5)`,
+                              }}
+                            >
+                              #{index + 1}
+                            </span>
+                          )}
                         </div>
 
                         {/* Candidate Details */}
@@ -400,13 +507,13 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
                                 </span>
                                 <span>•</span>
                                 <span className="flex items-center gap-1 text-gray-300">
-                                  <Clock className="w-3.5 h-3.5 text-cyan-400" /> {cand.episodesCount} eps
+                                  <Clock className="w-3.5 h-3.5 text-white" /> {cand.episodesCount} eps
                                 </span>
                               </div>
                             </div>
 
                             {/* Happiness Score Badge */}
-                            <div className="flex items-center gap-2.5 bg-gray-900/90 px-4 py-2 rounded-2xl border border-gray-700/80 shrink-0">
+                            <div className="flex items-center gap-2.5 bg-black/60 px-4 py-2 rounded-2xl border border-white/15 shrink-0">
                               <Sparkles className="w-5 h-5 text-amber-400" />
                               <div className="flex flex-col">
                                 <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">
@@ -419,29 +526,41 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
                             </div>
                           </div>
 
-                          {/* Explanations */}
+                          {/* Explanations: Totalmente adaptativas al tema activo o neutro (adiós morado fijo) */}
                           <div className="space-y-1.5">
                             {cand.result.explanations.map((exp, i) => (
                               <div
                                 key={i}
-                                className="flex items-center gap-2 text-xs text-purple-200 bg-purple-950/30 px-3 py-1.5 rounded-xl border border-purple-900/40"
+                                className="flex items-center gap-2 text-xs px-3.5 py-2 rounded-xl border transition-all"
+                                style={{
+                                  backgroundColor: isNeutral
+                                    ? "rgba(255, 255, 255, 0.05)"
+                                    : `rgba(${theme.primaryRgb}, 0.12)`,
+                                  borderColor: isNeutral
+                                    ? "rgba(255, 255, 255, 0.15)"
+                                    : `rgba(${theme.primaryRgb}, 0.35)`,
+                                  color: isNeutral ? "#E2E8F0" : "white",
+                                }}
                               >
-                                <Info className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                                <Info
+                                  className="w-3.5 h-3.5 shrink-0"
+                                  style={{ color: isNeutral ? "#FFFFFF" : theme.primaryColor }}
+                                />
                                 <span>{exp}</span>
                               </div>
                             ))}
                           </div>
 
                           {/* DUAL VOTING SECTION (Slider + Direct Numeric Input + Votar Button) */}
-                          <div className="pt-4 border-t border-gray-800/80 space-y-3">
+                          <div className="pt-4 border-t border-white/10 space-y-3">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                               <label className="text-xs font-bold text-gray-200 flex items-center gap-1.5">
-                                <Vote className="w-4 h-4 text-cyan-400" /> Tu Nivel de Ganas (0 a 10):
+                                <Vote className="w-4 h-4 text-white" /> Tu Nivel de Ganas (0 a 10):
                               </label>
 
                               {/* Direct Numeric Input + Votar Button */}
                               <div className="flex items-center gap-2 self-start sm:self-auto">
-                                <div className="flex items-center gap-1.5 bg-gray-900 px-3 py-1 rounded-xl border border-gray-700">
+                                <div className="flex items-center gap-1.5 bg-black/60 px-3 py-1 rounded-xl border border-white/20">
                                   <span className="text-xs text-gray-400 font-semibold">Score:</span>
                                   <input
                                     type="number"
@@ -450,21 +569,32 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
                                     step="0.5"
                                     value={draftScore}
                                     onChange={(e) => handleDraftChange(cand.id, parseFloat(e.target.value))}
-                                    className="w-14 bg-gray-800 text-white font-extrabold text-sm px-2 py-0.5 rounded-lg border border-cyan-500/50 text-center focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                                    className="w-14 bg-black text-white font-extrabold text-sm px-2 py-0.5 rounded-lg border border-white/30 text-center focus:outline-none focus:border-white"
                                   />
                                   <span className="text-xs text-gray-400 font-bold">/ 10</span>
                                 </div>
 
-                                {/* Button "Votar" / Confirmar */}
+                                {/* Button "Votar" / Confirmar Adaptativo */}
                                 <button
                                   onClick={() => handleConfirmVote(cand.id)}
-                                  className={`px-4 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer shadow-md ${
+                                  className={`px-4 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer shadow-md active:scale-95 ${
                                     isFeedback
                                       ? "bg-emerald-500 text-gray-950 border border-emerald-400"
                                       : isDirty
-                                      ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-600/30 animate-pulse"
-                                      : "bg-gray-800 hover:bg-gray-700 text-gray-300"
+                                      ? isNeutral
+                                        ? "bg-white text-black hover:bg-slate-200 animate-pulse"
+                                        : "text-white animate-pulse"
+                                      : "bg-white/10 hover:bg-white/15 text-gray-300"
                                   }`}
+                                  style={
+                                    !isFeedback && isDirty && !isNeutral
+                                      ? {
+                                          background: theme.primaryColor,
+                                          color: activeTextColor,
+                                          boxShadow: `0 4px 14px rgba(${theme.primaryRgb}, 0.3)`,
+                                        }
+                                      : undefined
+                                  }
                                 >
                                   {isFeedback ? (
                                     <>
@@ -472,7 +602,11 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
                                     </>
                                   ) : isDirty ? (
                                     <>
-                                      <Vote className="w-4 h-4 text-purple-300" /> Votar
+                                      <Vote
+                                        className="w-4 h-4"
+                                        style={{ color: isNeutral ? "#05070B" : activeTextColor }}
+                                      />{" "}
+                                      Votar
                                     </>
                                   ) : (
                                     <>
@@ -483,7 +617,7 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
                               </div>
                             </div>
 
-                            {/* Range Slider */}
+                            {/* Range Slider Adaptativo */}
                             <input
                               type="range"
                               min="0"
@@ -491,7 +625,10 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
                               step="0.5"
                               value={draftScore}
                               onChange={(e) => handleDraftChange(cand.id, parseFloat(e.target.value))}
-                              className="w-full h-2.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                              className="w-full h-2.5 bg-black/60 rounded-lg appearance-none cursor-pointer"
+                              style={{
+                                accentColor: isNeutral ? "#FFFFFF" : theme.primaryColor,
+                              }}
                             />
                             <div className="flex justify-between text-[10px] text-gray-500 font-semibold">
                               <span>0 (Paso)</span>
@@ -509,7 +646,7 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
 
             {/* MODO 2: VISTA LISTA COMPACTA (RÁPIDA Y PANORÁMICA) */}
             {viewMode === "compact" && (
-              <div className="glass-panel rounded-3xl border border-gray-800 overflow-hidden divide-y divide-gray-800/80">
+              <div className="glass-panel rounded-3xl border border-white/15 overflow-hidden divide-y divide-white/10">
                 {rankedCandidates.map((cand, index) => {
                   const draftScore = draftVotes[cand.id] ?? 5;
                   const confirmedScore = confirmedVotes[cand.id] ?? 5;
@@ -519,18 +656,25 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
                   return (
                     <div
                       key={cand.id}
-                      className="p-4 hover:bg-slate-900/60 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
+                      className="p-4 hover:bg-white/[0.04] transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
                     >
                       {/* Left: Rank + Thumbnail + Title + Metadata */}
                       <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                        <span className="w-7 h-7 rounded-full bg-purple-950 text-purple-300 font-black text-xs flex items-center justify-center border border-purple-800 shrink-0">
+                        <span
+                          className="w-7 h-7 rounded-full font-black text-xs flex items-center justify-center border shrink-0"
+                          style={{
+                            backgroundColor: isNeutral ? "rgba(255, 255, 255, 0.1)" : `rgba(${theme.primaryRgb}, 0.2)`,
+                            color: isNeutral ? "#FFFFFF" : theme.primaryColor,
+                            borderColor: isNeutral ? "rgba(255, 255, 255, 0.2)" : `rgba(${theme.primaryRgb}, 0.4)`,
+                          }}
+                        >
                           #{index + 1}
                         </span>
 
                         <img
                           src={cand.imageUrl}
                           alt={cand.title}
-                          className="w-12 h-16 object-cover rounded-xl border border-gray-700 shrink-0 shadow-sm"
+                          className="w-12 h-16 object-cover rounded-xl border border-white/15 shrink-0 shadow-sm"
                         />
 
                         <div className="min-w-0 flex-1">
@@ -548,7 +692,7 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
                       </div>
 
                       {/* Center: Happiness Badge */}
-                      <div className="flex items-center gap-2 bg-gray-900 px-3 py-1.5 rounded-xl border border-gray-800 shrink-0">
+                      <div className="flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-xl border border-white/15 shrink-0">
                         <Sparkles className="w-4 h-4 text-amber-400" />
                         <div>
                           <span className="text-[9px] text-gray-400 uppercase font-bold block leading-none">
@@ -569,7 +713,10 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
                           step="0.5"
                           value={draftScore}
                           onChange={(e) => handleDraftChange(cand.id, parseFloat(e.target.value))}
-                          className="w-24 sm:w-32 h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                          className="w-24 sm:w-32 h-2 bg-black/60 rounded-lg appearance-none cursor-pointer"
+                          style={{
+                            accentColor: isNeutral ? "#FFFFFF" : theme.primaryColor,
+                          }}
                         />
 
                         <input
@@ -579,7 +726,7 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
                           step="0.5"
                           value={draftScore}
                           onChange={(e) => handleDraftChange(cand.id, parseFloat(e.target.value))}
-                          className="w-12 bg-gray-900 text-white font-bold text-xs px-1.5 py-1 rounded-lg border border-cyan-500/50 text-center"
+                          className="w-12 bg-black text-white font-bold text-xs px-1.5 py-1 rounded-lg border border-white/20 text-center"
                         />
 
                         <button
@@ -588,9 +735,19 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
                             isFeedback
                               ? "bg-emerald-500 text-gray-950"
                               : isDirty
-                              ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white animate-pulse"
-                              : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                              ? isNeutral
+                                ? "bg-white text-black font-extrabold animate-pulse"
+                                : "text-white animate-pulse"
+                              : "bg-white/10 text-gray-300 hover:bg-white/20"
                           }`}
+                          style={
+                            !isFeedback && isDirty && !isNeutral
+                              ? {
+                                  background: theme.primaryColor,
+                                  color: activeTextColor,
+                                }
+                              : undefined
+                          }
                         >
                           {isFeedback ? "¡Guardado!" : isDirty ? "Votar" : "Votado"}
                         </button>
@@ -611,6 +768,15 @@ export default function SharedListWorkspacePage({ params }: { params: { id: stri
         initialCriteria={groupCriteria}
         onSaveCriteria={(newCriteria) => setGroupCriteria(newCriteria)}
       />
+
+      {/* Modal de Confirmación para Abandonar la Lista Grupal (Visual 1) */}
+      <ConfirmLeaveGroupModal
+        isOpen={isLeaveModalOpen}
+        groupName={listName}
+        onClose={() => setIsLeaveModalOpen(false)}
+        onConfirm={handleConfirmLeaveGroup}
+      />
     </div>
   );
 }
+
